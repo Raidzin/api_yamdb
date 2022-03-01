@@ -13,25 +13,25 @@ class User(AbstractUser):
         (MODERATOR, MODERATOR),
         (USER, USER)
     )
-    groups = models.CharField(
+    role = models.CharField(
         max_length=10,
         choices=ROLE,
         default=USER
     )
     email = models.EmailField(unique=True)
-    user_permissions = models.CharField(
+    bio = models.CharField(
         blank=True,
         max_length=255
     )
 
     @property
     def is_admin(self):
-        return self.is_superuser or self.groups == self.ADMIN
+        return self.is_superuser or self.role == self.ADMIN
 
     @property
     def is_moderator(self):
-        return self.groups == self.MODERATOR
+        return self.role == self.MODERATOR
 
     @property
     def is_user(self):
-        return self.groups == self.USER
+        return self.role == self.USER
