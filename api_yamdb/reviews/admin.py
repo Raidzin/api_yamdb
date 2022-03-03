@@ -1,31 +1,38 @@
 from django.contrib import admin
-from .models import Comment, Review
+
+from .models import Comment, Review, Genre, Title, Category
 
 
+@admin.register(Review)
 class ReviewAdmin(admin.ModelAdmin):
-    list_display = (
-        'author',
-        'title',
-        'text',
-        'score',
-        'pub_date'
-    )
+    list_display = ('author', 'title', 'text', 'score', 'pub_date')
     search_fields = ('title',)
     list_filter = ('author', 'title')
     empty_value_display = '-пусто-'
 
 
+@admin.register(Comment)
 class CommentAdmin(admin.ModelAdmin):
-    list_display = (
-        'author',
-        'review',
-        'text',
-        'pub_date'
-    )
+    list_display = ('author', 'review', 'text', 'pub_date')
     search_fields = ('review',)
     list_filter = ('author', 'review')
     empty_value_display = '-пусто-'
 
 
-admin.site.register(Review, ReviewAdmin)
-admin.site.register(Comment, CommentAdmin)
+@admin.register(Title)
+class TitlesAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'year', 'category')
+    search_fields = ('name',)
+    list_filter = ('category',)
+
+
+@admin.register(Category)
+class CategoriesAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'slug')
+    search_fields = ('name',)
+
+
+@admin.register(Genre)
+class GenresAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'slug')
+    search_fields = ('name',)

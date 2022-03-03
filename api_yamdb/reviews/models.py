@@ -2,12 +2,85 @@ from django.contrib.auth import get_user_model
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
-
 User = get_user_model()
 
 
+class Category(models.Model):
+    """
+    Категории произведений.
+
+    Поля: id, name, slug, titles.
+    """
+    name = models.TextField(
+        verbose_name='Название',
+        max_length=150
+    )
+    slug = models.SlugField(
+        verbose_name='идентификатор'
+    )
+
+    class Meta:
+        verbose_name = 'Категорию'
+        verbose_name_plural = 'Категории'
+
+    def __str__(self):
+        return self.name
+
+
 class Title(models.Model):
-    pass
+    """
+    Произведения.
+
+    Поля: id, name, year, category, genres.
+    """
+    name = models.TextField(
+        verbose_name='Название',
+        max_length=150,
+    )
+    year = models.IntegerField(
+        verbose_name='Год',
+    )
+    category = models.ForeignKey(
+        Category,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='titles',
+        verbose_name='Категория'
+    )
+
+    class Meta:
+        ordering = '-year',
+        verbose_name = 'Произведение'
+        verbose_name_plural = 'Произведения'
+
+    def __str__(self):
+        return self.name
+
+
+class Genre(models.Model):
+    """
+    Жанры.
+
+    Поля: id, name, slug, titles.
+    """
+    name = models.TextField(
+        verbose_name='Название',
+        max_length=150,
+    )
+    slug = models.SlugField(
+        verbose_name='идентификатор'
+    )
+    titles = models.ManyToManyField(
+        Title,
+        related_name='genres',
+    )
+
+    class Meta:
+        verbose_name = 'Жанр'
+        verbose_name_plural = 'Жанры'
+
+    def __str__(self):
+        return self.name
 
 
 class Review(models.Model):
