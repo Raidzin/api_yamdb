@@ -27,6 +27,29 @@ class Category(models.Model):
         return self.name
 
 
+class Genre(models.Model):
+    """
+    Жанры.
+
+    Поля: id, name, slug, titles.
+    """
+    name = models.TextField(
+        verbose_name='Название',
+        max_length=150,
+    )
+    slug = models.SlugField(
+        verbose_name='идентификатор'
+    )
+
+    class Meta:
+        verbose_name = 'Жанр'
+        verbose_name_plural = 'Жанры'
+        ordering = ('id',)
+
+    def __str__(self):
+        return self.name
+
+
 class Title(models.Model):
     """
     Произведения.
@@ -47,6 +70,10 @@ class Title(models.Model):
         related_name='titles',
         verbose_name='Категория'
     )
+    genres = models.ManyToManyField(
+        Genre,
+        related_name='titles'
+    )
 
     class Meta:
         ordering = '-year',
@@ -57,38 +84,7 @@ class Title(models.Model):
         return self.name
 
 
-class Genre(models.Model):
-    """
-    Жанры.
-
-    Поля: id, name, slug, titles.
-    """
-    name = models.TextField(
-        verbose_name='Название',
-        max_length=150,
-    )
-    slug = models.SlugField(
-        verbose_name='идентификатор'
-    )
-    titles = models.ManyToManyField(
-        Title,
-        related_name='genres',
-    )
-
-    class Meta:
-        verbose_name = 'Жанр'
-        verbose_name_plural = 'Жанры'
-
-    def __str__(self):
-        return self.name
-
-
 class Review(models.Model):
-    author = models.ForeignKey(
-        User, on_delete=models.CASCADE,
-        related_name='reviews',
-        verbose_name='Автор'
-    )
     title = models.ForeignKey(
         Title, on_delete=models.CASCADE,
         related_name='reviews',
@@ -96,6 +92,11 @@ class Review(models.Model):
     )
     text = models.TextField(
         verbose_name='Текст отзыва'
+    )
+    author = models.ForeignKey(
+        User, on_delete=models.CASCADE,
+        related_name='reviews',
+        verbose_name='Автор'
     )
     score = models.IntegerField(
         validators=[
