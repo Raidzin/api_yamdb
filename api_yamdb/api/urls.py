@@ -1,11 +1,8 @@
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework import routers
-from .views import (
-    UserViewSet,
-    APISignUp,
-    APIToken,
-)
+
 from .utils import generate_and_send_confirmation_code_to_email
+from .views import APISignUp, APIToken, UserViewSet
 
 router = routers.DefaultRouter()
 router.register('users', UserViewSet, basename='User')

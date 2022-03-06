@@ -1,22 +1,18 @@
-from rest_framework.permissions import (
-    IsAuthenticated, AllowAny
-)
-from rest_framework.decorators import action
-from rest_framework.response import Response
 from django.contrib.auth.tokens import default_token_generator
-from rest_framework import viewsets, status, filters
 from django.shortcuts import get_object_or_404
-from rest_framework.views import APIView
+from rest_framework import filters, status, viewsets
+from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import AccessToken
 from users.models import User
+
+from .permissions import (AdminOnlyPermission,)
+from .serializers import (TokenSerializer, UserSerializer,
+                          UserSerializerOrReadOnly)
 from .utils import generate_and_send_confirmation_code_to_email
-from .permissions import (
-    AdminOnlyPermission,
-)
-from .serializers import (UserSerializerOrReadOnly,
-                          TokenSerializer,
-                          UserSerializer)
 
 
 class APISignUp(APIView):
@@ -57,7 +53,7 @@ class APIToken(APIView):
 class UserViewSet(viewsets.ModelViewSet):
     """API для работы пользователями"""
     lookup_field = 'username'
-    queryset = User.objects.all().order_by('id')
+    queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = (AdminOnlyPermission,)
     pagination_class = PageNumberPagination
