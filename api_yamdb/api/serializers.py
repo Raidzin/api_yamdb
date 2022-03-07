@@ -5,7 +5,7 @@ from users.models import User
 
 from .utils import CurrentTitleDefault
 
-REVERSED_NAME = 'me'
+RESERVED_NAME = 'me'
 MESSAGE_FOR_RESERVED_NAME = 'Имя пользователя "me" использовать нельзя.'
 MESSAGE_FOR_USER_NOT_FOUND = 'Пользователя с таким именем не существует.'
 
@@ -61,24 +61,25 @@ class UserSerializerOrReadOnly(serializers.ModelSerializer):
 
     def validate_username(self, value):
         """Зарезервированное имя использовать нельзя."""
-        if value == REVERSED_NAME:
+        if value == RESERVED_NAME:
             raise serializers.ValidationError(MESSAGE_FOR_RESERVED_NAME)
         return value
 
 
-class UserSerializer(serializers.ModelSerializer):
-    """Сериалайзер пользователей"""
+class ForAdminSerializer(serializers.ModelSerializer):
+    """Сериализатор для пользователей со статусом admin."""
+    email = serializers.EmailField(
+        validators=[UniqueValidator(queryset=User.objects.all())])
 
     class Meta:
-        fields = (
-            'first_name',
-            'last_name',
-            'username',
-            'bio',
-            'email',
-            'role'
-        )
         model = User
+        fields = (
+            'username', 'email', 'first_name', 'last_name', 'bio', 'role')
+
+    def validate_username(self, value):
+        if value == RESERVED_NAME:
+            raise serializers.ValidationError(MESSAGE_FOR_RESERVED_NAME)
+        return value
 
 
 class TokenSerializer(serializers.Serializer):
@@ -88,7 +89,7 @@ class TokenSerializer(serializers.Serializer):
 
     def validate_username(self, value):
         """Зарезервированное имя использовать нельзя."""
-        if value == REVERSED_NAME:
+        if value == RESERVED_NAME:
             raise serializers.ValidationError(MESSAGE_FOR_RESERVED_NAME)
         if not User.objects.filter(username=value).exists():
             raise exceptions.NotFound(MESSAGE_FOR_USER_NOT_FOUND)

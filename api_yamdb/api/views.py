@@ -9,8 +9,8 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import AccessToken
 from users.models import User
 
-from .permissions import (AdminOnlyPermission,)
-from .serializers import (TokenSerializer, UserSerializer,
+from .permissions import IsAdmin
+from .serializers import (ForAdminSerializer, TokenSerializer,
                           UserSerializerOrReadOnly)
 from .utils import generate_and_send_confirmation_code_to_email
 
@@ -52,13 +52,14 @@ class APIToken(APIView):
 
 class UserViewSet(viewsets.ModelViewSet):
     """API для работы пользователями"""
+
     lookup_field = 'username'
     queryset = User.objects.all()
-    serializer_class = UserSerializer
-    permission_classes = (AdminOnlyPermission,)
+    serializer_class = ForAdminSerializer
+    permission_classes = (IsAdmin,)
     pagination_class = PageNumberPagination
     filter_backends = [filters.SearchFilter]
-    search_fields = ['user__username', ]
+    search_fields = ('username', )
 
     @action(
         detail=False,
@@ -66,23 +67,22 @@ class UserViewSet(viewsets.ModelViewSet):
         permission_classes=[IsAuthenticated]
     )
     def me(self, request):
-        """Запрос и редактирование профиля пользователя."""
-        user = request.user
+        """
+        Запрос и возможность редактирования
+        информации профиля пользователя.
+        """
+        user = get_object_or_404(User, username=request.user.username)
         if request.method == 'GET':
-            serializer = UserSerializer(user)
-            return Response(
-                serializer.data,
-                status=status.HTTP_200_OK
-            )
+            serializer = UserSerializerOrReadOnly(user, many=False)
+            return Response(serializer.data)
         if request.method == 'PATCH':
             serializer = UserSerializerOrReadOnly(
                 user,
                 data=request.data,
-                partial=True
+                partial=True, many=False
             )
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
             return Response(
-                serializer.data,
-                status=status.HTTP_200_OK
-            )
+                serializer.errors, status=status.HTTP_400_BAD_REQUEST)
