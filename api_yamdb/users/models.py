@@ -23,6 +23,10 @@ class User(AbstractUser):
         blank=True,
         max_length=255
     )
+    username = models.CharField(max_length=150, unique=True, db_index=True)
+
+    class Meta:
+        ordering = ('id',)
 
     @property
     def is_admin(self):

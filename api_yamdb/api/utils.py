@@ -1,10 +1,12 @@
 import uuid
 
+from api_yamdb.settings import DEFAULT_FROM_EMAIL
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
-
-from api_yamdb.settings import EMAIL_ADMIN
 from reviews.models import Title, User
+
+CONFIRMATION_CODE = 'Код подтвержения для завершения регистрации'
+MESSAGE_FOR_YOUR_CONFIRMATION_CODE = 'Ваш код для получения JWT токена'
 
 
 class CurrentTitleDefault:
@@ -24,9 +26,9 @@ def generate_and_send_confirmation_code_to_email(username):
     confirmation_code = str(uuid.uuid3(uuid.NAMESPACE_DNS, username))
     user.confirmation_code = confirmation_code
     send_mail(
-        'Код подтвержения для завершения регистрации',
-        f'Ваш код для получения JWT токена {user.confirmation_code}',
-        EMAIL_ADMIN,
+        CONFIRMATION_CODE,
+        f'{MESSAGE_FOR_YOUR_CONFIRMATION_CODE}{user.confirmation_code}',
+        DEFAULT_FROM_EMAIL,
         [user.email],
         fail_silently=False,
     )
