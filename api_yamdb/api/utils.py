@@ -27,9 +27,10 @@ def generate_and_send_confirmation_code_to_email(username):
     user.confirmation_code = confirmation_code
     send_mail(
         CONFIRMATION_CODE,
-        f'{MESSAGE_FOR_YOUR_CONFIRMATION_CODE}{user.confirmation_code}',
+        f'{MESSAGE_FOR_YOUR_CONFIRMATION_CODE} {user.confirmation_code}',
         DEFAULT_FROM_EMAIL,
         [user.email],
         fail_silently=False,
     )
     user.save()
+    print(user.confirmation_code)

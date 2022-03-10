@@ -9,8 +9,8 @@ from .views import (APISignUp, APIToken, UserViewSet, ReviewViewSet,
 router = routers.DefaultRouter()
 router.register('users', UserViewSet, basename='User')
 router.register('titles', TitleViewSet, basename='Title')
-router.register('categories', CategoryViewSet, basename='Title')
-router.register('genres', GenreViewSet, basename='Title')
+router.register('categories', CategoryViewSet, basename='Category')
+router.register('genres', GenreViewSet, basename='Genre')
 router.register(
     r'titles/(?P<title_id>\d+)/reviews',
     ReviewViewSet,
