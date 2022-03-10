@@ -8,11 +8,12 @@ from .views import (APISignUp, APIToken, UserViewSet, ReviewViewSet,
 router = routers.DefaultRouter()
 router.register('users', UserViewSet, basename='User')
 router.register(
-    r'titles/reviews',
+    r'titles/(?P<title_id>\d+)/reviews',
     ReviewViewSet, basename='reviews')
 router.register(
-    r'titles/reviews/comments',
-    CommentViewSet, basename='comments')
+    r'titles/(?P<titles_id>\d+)/reviews/(?P<review_id>\d+)/comments',
+    CommentViewSet, basename='comments'
+)
 
 
 urlpatterns = [
