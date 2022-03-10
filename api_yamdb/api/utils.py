@@ -33,4 +33,3 @@ def generate_and_send_confirmation_code_to_email(username):
         fail_silently=False,
     )
     user.save()
-    print(user.confirmation_code)

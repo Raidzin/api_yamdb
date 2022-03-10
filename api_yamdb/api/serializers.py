@@ -10,12 +10,6 @@ MESSAGE_FOR_RESERVED_NAME = 'Имя пользователя "me" использ
 MESSAGE_FOR_USER_NOT_FOUND = 'Пользователя с таким именем не существует.'
 
 
-class TitleSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Title
-        fields = ('id', 'name', 'year', 'rating', 'description', 'genres', 'category')
-
-
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
@@ -26,6 +20,16 @@ class GenreSerializer(serializers.ModelSerializer):
     class Meta:
         model = Genre
         fields = ('name', 'slug')
+
+
+class TitleSerializer(serializers.ModelSerializer):
+    genres = GenreSerializer(many=True)
+    category = CategorySerializer()
+
+    class Meta:
+        model = Title
+        fields = (
+            'id', 'name', 'year', 'rating', 'description', 'genre', 'category')
 
 
 class ReviewSerializer(serializers.ModelSerializer):

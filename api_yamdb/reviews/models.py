@@ -16,7 +16,8 @@ class Category(models.Model):
         max_length=150
     )
     slug = models.SlugField(
-        verbose_name='идентификатор'
+        verbose_name='идентификатор',
+        unique=True
     )
 
     class Meta:
@@ -38,7 +39,8 @@ class Genre(models.Model):
         max_length=150,
     )
     slug = models.SlugField(
-        verbose_name='идентификатор'
+        verbose_name='идентификатор',
+        unique=True
     )
 
     class Meta:
@@ -74,7 +76,7 @@ class Title(models.Model):
         related_name='titles',
         verbose_name='Категория'
     )
-    genres = models.ManyToManyField(
+    genre = models.ManyToManyField(
         Genre,
         related_name='titles'
     )
