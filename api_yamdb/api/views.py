@@ -9,23 +9,25 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import AccessToken
 from users.models import User
 
-
 from reviews.models import (
     Title,
-    Review
+    Review,
+    Category,
+    Genre
 )
 from .permissions import (IsAdmin, IsAuthorOrAdministratorOrReadOnly)
-from .serializers import (CommentSerializer, ForAdminSerializer,
+from .serializers import (ForAdminSerializer,
                           TokenSerializer,
                           UserSerializerOrReadOnly, ReviewSerializer,
-                          CommentSerializer,
+                          CommentSerializer, TitleSerializer,
+                          CategorySerializer, GenreSerializer,
                           )
 from .utils import generate_and_send_confirmation_code_to_email
 
 
 class APISignUp(APIView):
     """Регистрация пользователя."""
-    permission_classes = (AllowAny, )
+    permission_classes = (AllowAny,)
 
     def post(self, request):
         serializer = UserSerializerOrReadOnly(data=request.data)
@@ -41,7 +43,7 @@ class APISignUp(APIView):
 
 class APIToken(APIView):
     """Выдача токена"""
-    permission_classes = (AllowAny, )
+    permission_classes = (AllowAny,)
 
     def post(self, request):
         serializer = TokenSerializer(data=request.data)
@@ -49,7 +51,7 @@ class APIToken(APIView):
             user = get_object_or_404(
                 User, username=serializer.data['username'])
             if default_token_generator.check_token(
-               user, serializer.data['confirmation_code']):
+                    user, serializer.data['confirmation_code']):
                 token = AccessToken.for_user(user)
                 return Response(
                     {'token': str(token)}, status=status.HTTP_200_OK)
@@ -67,7 +69,7 @@ class UserViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAdmin,)
     pagination_class = PageNumberPagination
     filter_backends = [filters.SearchFilter]
-    search_fields = ('username', )
+    search_fields = ('username',)
 
     @action(
         detail=False,
@@ -96,9 +98,27 @@ class UserViewSet(viewsets.ModelViewSet):
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+class TitleViewSet(viewsets.ModelViewSet):
+    serializer_class = TitleSerializer
+    permission_classes = IsAuthorOrAdministratorOrReadOnly,
+    queryset = Title.objects.all()
+
+
+class CategoryViewSet(viewsets.ModelViewSet):
+    serializer_class = CategorySerializer
+    permission_classes = IsAuthorOrAdministratorOrReadOnly,
+    queryset = Category.objects.all()
+
+
+class GenreViewSet(viewsets.ModelViewSet):
+    serializer_class = GenreSerializer
+    permission_classes = IsAuthorOrAdministratorOrReadOnly,
+    queryset = Genre.objects.all()
+
+
 class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
-    permission_classes = IsAuthorOrAdministratorOrReadOnly
+    permission_classes = IsAuthorOrAdministratorOrReadOnly,
 
     def get_queryset(self):
         title_id = self.kwargs.get('title_id')
@@ -113,7 +133,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
 class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
-    permission_classes = IsAuthorOrAdministratorOrReadOnly
+    permission_classes = IsAuthorOrAdministratorOrReadOnly,
 
     def get_queryset(self):
         review_id = self.kwargs.get('review_id')

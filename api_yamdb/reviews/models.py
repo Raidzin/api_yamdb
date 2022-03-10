@@ -60,6 +60,10 @@ class Title(models.Model):
         verbose_name='Название',
         max_length=150,
     )
+    description = models.TextField(
+        verbose_name='Описание',
+        blank=True,
+    )
     year = models.IntegerField(
         verbose_name='Год',
     )

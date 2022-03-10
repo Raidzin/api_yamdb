@@ -1,6 +1,6 @@
 from rest_framework import exceptions, serializers
 from rest_framework.validators import UniqueTogetherValidator, UniqueValidator
-from reviews.models import Comment, Review
+from reviews.models import Comment, Review, Title, Category, Genre
 from users.models import User
 
 from .utils import CurrentTitleDefault
@@ -8,6 +8,24 @@ from .utils import CurrentTitleDefault
 RESERVED_NAME = 'me'
 MESSAGE_FOR_RESERVED_NAME = 'Имя пользователя "me" использовать нельзя.'
 MESSAGE_FOR_USER_NOT_FOUND = 'Пользователя с таким именем не существует.'
+
+
+class TitleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Title
+        fields = ('id', 'name', 'year', 'description', 'genres', 'category')
+
+
+class CategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ('name', 'slug')
+
+
+class GenreSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Genre
+        fields = ('name', 'slug')
 
 
 class ReviewSerializer(serializers.ModelSerializer):
@@ -57,7 +75,7 @@ class UserSerializerOrReadOnly(serializers.ModelSerializer):
         fields = (
             'username', 'email', 'first_name', 'last_name', 'bio', 'role'
         )
-        read_only_fields = ('role', )
+        read_only_fields = ('role',)
 
     def validate_username(self, value):
         """Зарезервированное имя использовать нельзя."""
