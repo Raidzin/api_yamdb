@@ -13,7 +13,7 @@ MESSAGE_FOR_USER_NOT_FOUND = 'Пользователя с таким имене�
 class TitleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Title
-        fields = ('id', 'name', 'year', 'description', 'genres', 'category')
+        fields = ('id', 'name', 'year', 'rating', 'description', 'genres', 'category')
 
 
 class CategorySerializer(serializers.ModelSerializer):

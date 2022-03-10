@@ -79,6 +79,12 @@ class Title(models.Model):
         related_name='titles'
     )
 
+    @property
+    def rating(self):
+        return Review.objects.filter(
+            id=self.id
+        ).aggregate(models.Avg('score'))['score__avg']
+
     class Meta:
         ordering = '-year',
         verbose_name = 'Произведение'
