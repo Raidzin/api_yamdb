@@ -72,7 +72,7 @@ class UserViewSet(viewsets.ModelViewSet):
         methods=['get', 'patch'],
         permission_classes=[IsAuthenticated]
     )
-    def user_get_patch(self, request):
+    def me(self, request):
         """
         Запрос и возможность редактирования
         информации профиля пользователя.
