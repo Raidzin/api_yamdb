@@ -6,17 +6,13 @@ User = get_user_model()
 
 
 class Category(models.Model):
-    """
-    Категории произведений.
-
-    Поля: id, name, slug, titles.
-    """
     name = models.TextField(
         verbose_name='Название',
         max_length=150
     )
     slug = models.SlugField(
-        verbose_name='идентификатор'
+        verbose_name='идентификатор',
+        unique=True
     )
 
     class Meta:
@@ -28,17 +24,13 @@ class Category(models.Model):
 
 
 class Genre(models.Model):
-    """
-    Жанры.
-
-    Поля: id, name, slug, titles.
-    """
     name = models.TextField(
         verbose_name='Название',
         max_length=150,
     )
     slug = models.SlugField(
-        verbose_name='идентификатор'
+        verbose_name='идентификатор',
+        unique=True
     )
 
     class Meta:
@@ -51,11 +43,6 @@ class Genre(models.Model):
 
 
 class Title(models.Model):
-    """
-    Произведения.
-
-    Поля: id, name, year, category, genres.
-    """
     name = models.TextField(
         verbose_name='Название',
         max_length=150,
@@ -74,7 +61,7 @@ class Title(models.Model):
         related_name='titles',
         verbose_name='Категория'
     )
-    genres = models.ManyToManyField(
+    genre = models.ManyToManyField(
         Genre,
         related_name='titles'
     )
@@ -82,7 +69,7 @@ class Title(models.Model):
     @property
     def rating(self):
         return Review.objects.filter(
-            id=self.id
+            title__id=self.id
         ).aggregate(models.Avg('score'))['score__avg']
 
     class Meta:

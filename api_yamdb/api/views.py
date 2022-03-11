@@ -1,27 +1,24 @@
-from django.contrib.auth.tokens import default_token_generator
 from django.shortcuts import get_object_or_404
+
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
+from rest_framework.filters import SearchFilter
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated, SAFE_METHODS
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import AccessToken
 from users.models import User
 
-from reviews.models import (
-    Title,
-    Review,
-    Category,
-    Genre
-)
-from .permissions import (IsAdmin, IsAuthorOrAdministratorOrReadOnly)
-from .serializers import (ForAdminSerializer,
-                          TokenSerializer,
+from reviews.models import Title, Review, Category, Genre
+from .permissions import (IsAdmin,
+                          ReadOnlyOrAdmin,
+                          CreateOrModeratorDeleteOrAdmin)
+from .serializers import (ForAdminSerializer, TokenSerializer,
                           UserSerializerOrReadOnly, ReviewSerializer,
-                          CommentSerializer, TitleSerializer,
-                          CategorySerializer, GenreSerializer,
-                          )
+                          CommentSerializer, OutputTitleSerializer,
+                          InputTitleSerializer, CategorySerializer,
+                          GenreSerializer, )
 from .utils import generate_and_send_confirmation_code_to_email
 
 
@@ -50,8 +47,7 @@ class APIToken(APIView):
         if serializer.is_valid(raise_exception=True):
             user = get_object_or_404(
                 User, username=serializer.data['username'])
-            if default_token_generator.check_token(
-                    user, serializer.data['confirmation_code']):
+            if user.confirmation_code == serializer.data['confirmation_code']:
                 token = AccessToken.for_user(user)
                 return Response(
                     {'token': str(token)}, status=status.HTTP_200_OK)
@@ -76,7 +72,7 @@ class UserViewSet(viewsets.ModelViewSet):
         methods=['get', 'patch'],
         permission_classes=[IsAuthenticated]
     )
-    def me(self, request):
+    def user_get_patch(self, request):
         """
         Запрос и возможность редактирования
         информации профиля пользователя.
@@ -98,27 +94,63 @@ class UserViewSet(viewsets.ModelViewSet):
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class TitleViewSet(viewsets.ModelViewSet):
-    serializer_class = TitleSerializer
-    permission_classes = IsAuthorOrAdministratorOrReadOnly,
-    queryset = Title.objects.all()
-
-
 class CategoryViewSet(viewsets.ModelViewSet):
     serializer_class = CategorySerializer
-    permission_classes = IsAuthorOrAdministratorOrReadOnly,
     queryset = Category.objects.all()
+    permission_classes = ReadOnlyOrAdmin,
+    pagination_class = PageNumberPagination
+    filter_backends = SearchFilter,
+    search_fields = 'name',
+
+    def delete_category(self, *args, **kwargs):
+        category = get_object_or_404(Category, slug=kwargs.get('slug'))
+        category.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class GenreViewSet(viewsets.ModelViewSet):
     serializer_class = GenreSerializer
-    permission_classes = IsAuthorOrAdministratorOrReadOnly,
     queryset = Genre.objects.all()
+    permission_classes = ReadOnlyOrAdmin,
+    pagination_class = PageNumberPagination
+    filter_backends = SearchFilter,
+    search_fields = 'name',
+
+    def delete_genre(self, *args, **kwargs):
+        genre = get_object_or_404(Genre, slug=kwargs.get('slug'))
+        genre.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class TitleViewSet(viewsets.ModelViewSet):
+    permission_classes = ReadOnlyOrAdmin,
+    pagination_class = PageNumberPagination
+
+    def get_queryset(self):
+        genre_slug = self.request.query_params.get('genre')
+        category_slug = self.request.query_params.get('category')
+        year = self.request.query_params.get('year')
+        name = self.request.query_params.get('name')
+        queryset = Title.objects.all()
+        if genre_slug is not None:
+            queryset = queryset.filter(genre__slug=genre_slug)
+        if category_slug is not None:
+            queryset = queryset.filter(category__slug=category_slug)
+        if year is not None:
+            queryset = queryset.filter(year=year)
+        if name is not None:
+            queryset = queryset.filter(name__contains=name)
+        return queryset
+
+    def get_serializer_class(self):
+        if self.request._request.method in SAFE_METHODS:
+            return OutputTitleSerializer
+        return InputTitleSerializer
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
-    permission_classes = IsAuthorOrAdministratorOrReadOnly,
+    permission_classes = CreateOrModeratorDeleteOrAdmin,
 
     def get_queryset(self):
         title_id = self.kwargs.get('title_id')
@@ -133,7 +165,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
 class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
-    permission_classes = IsAuthorOrAdministratorOrReadOnly,
+    permission_classes = CreateOrModeratorDeleteOrAdmin,
 
     def get_queryset(self):
         review_id = self.kwargs.get('review_id')
