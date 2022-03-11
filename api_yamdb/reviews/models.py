@@ -6,11 +6,6 @@ User = get_user_model()
 
 
 class Category(models.Model):
-    """
-    Категории произведений.
-
-    Поля: id, name, slug, titles.
-    """
     name = models.TextField(
         verbose_name='Название',
         max_length=150
@@ -29,11 +24,6 @@ class Category(models.Model):
 
 
 class Genre(models.Model):
-    """
-    Жанры.
-
-    Поля: id, name, slug, titles.
-    """
     name = models.TextField(
         verbose_name='Название',
         max_length=150,
@@ -53,11 +43,6 @@ class Genre(models.Model):
 
 
 class Title(models.Model):
-    """
-    Произведения.
-
-    Поля: id, name, year, category, genres.
-    """
     name = models.TextField(
         verbose_name='Название',
         max_length=150,

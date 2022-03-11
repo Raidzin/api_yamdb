@@ -10,20 +10,15 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import AccessToken
 from users.models import User
 
-from reviews.models import (
-    Title,
-    Review,
-    Category,
-    Genre
-)
-from .permissions import (IsAdmin, ReadOnlyOrAdmin, CreateOrModeratorDeleteOrAdmin)
-from .serializers import (ForAdminSerializer,
-                          TokenSerializer,
+from reviews.models import Title, Review, Category, Genre
+from .permissions import (IsAdmin,
+                          ReadOnlyOrAdmin,
+                          CreateOrModeratorDeleteOrAdmin)
+from .serializers import (ForAdminSerializer, TokenSerializer,
                           UserSerializerOrReadOnly, ReviewSerializer,
                           CommentSerializer, OutputTitleSerializer,
-                          InputTitleSerializer,
-                          CategorySerializer, GenreSerializer,
-                          )
+                          InputTitleSerializer, CategorySerializer,
+                          GenreSerializer, )
 from .utils import generate_and_send_confirmation_code_to_email
 
 
@@ -77,7 +72,7 @@ class UserViewSet(viewsets.ModelViewSet):
         methods=['get', 'patch'],
         permission_classes=[IsAuthenticated]
     )
-    def me(self, request):
+    def user_get_patch(self, request):
         """
         Запрос и возможность редактирования
         информации профиля пользователя.
@@ -97,35 +92,6 @@ class UserViewSet(viewsets.ModelViewSet):
                 return Response(serializer.data, status=status.HTTP_200_OK)
             return Response(
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-class TitleViewSet(viewsets.ModelViewSet):
-    # queryset = Title.objects.all()
-    permission_classes = ReadOnlyOrAdmin,
-    pagination_class = PageNumberPagination
-    filter_backends = SearchFilter,
-    search_fields = 'name',
-
-    def get_queryset(self):
-        genre_slug = self.request.query_params.get('genre')
-        category_slug = self.request.query_params.get('category')
-        year = self.request.query_params.get('year')
-        name = self.request.query_params.get('name')
-        queryset = Title.objects.all()
-        if genre_slug is not None:
-            queryset = queryset.filter(genre__slug=genre_slug)
-        if category_slug is not None:
-            queryset = queryset.filter(category__slug=category_slug)
-        if year is not None:
-            queryset = queryset.filter(year=year)
-        if name is not None:
-            queryset = queryset.filter(name__contains=name)
-        return queryset
-
-    def get_serializer_class(self):
-        if self.request._request.method in SAFE_METHODS:
-            return OutputTitleSerializer
-        return InputTitleSerializer
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
@@ -154,6 +120,32 @@ class GenreViewSet(viewsets.ModelViewSet):
         genre = get_object_or_404(Genre, slug=kwargs.get('slug'))
         genre.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class TitleViewSet(viewsets.ModelViewSet):
+    permission_classes = ReadOnlyOrAdmin,
+    pagination_class = PageNumberPagination
+
+    def get_queryset(self):
+        genre_slug = self.request.query_params.get('genre')
+        category_slug = self.request.query_params.get('category')
+        year = self.request.query_params.get('year')
+        name = self.request.query_params.get('name')
+        queryset = Title.objects.all()
+        if genre_slug is not None:
+            queryset = queryset.filter(genre__slug=genre_slug)
+        if category_slug is not None:
+            queryset = queryset.filter(category__slug=category_slug)
+        if year is not None:
+            queryset = queryset.filter(year=year)
+        if name is not None:
+            queryset = queryset.filter(name__contains=name)
+        return queryset
+
+    def get_serializer_class(self):
+        if self.request._request.method in SAFE_METHODS:
+            return OutputTitleSerializer
+        return InputTitleSerializer
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
