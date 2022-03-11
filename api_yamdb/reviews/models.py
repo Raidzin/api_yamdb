@@ -84,7 +84,7 @@ class Title(models.Model):
     @property
     def rating(self):
         return Review.objects.filter(
-            id=self.id
+            title__id=self.id
         ).aggregate(models.Avg('score'))['score__avg']
 
     class Meta:

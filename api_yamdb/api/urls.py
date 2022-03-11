@@ -10,10 +10,6 @@ router = routers.DefaultRouter()
 router.register('users', UserViewSet, basename='User')
 router.register('titles', TitleViewSet, basename='Title')
 router.register('categories', CategoryViewSet, basename='Category')
-router.register(
-    r'categories/(?P<slug>\d+)',
-    CategoryViewSet,
-    basename='CategoryDelete')
 router.register('genres', GenreViewSet, basename='Genre')
 router.register(
     r'titles/(?P<title_id>\d+)/reviews',
@@ -26,6 +22,16 @@ router.register(
 )
 
 urlpatterns = [
+    path(
+        'v1/categories/<slug:slug>/',
+        CategoryViewSet.as_view({'delete': 'delete_category'}),
+        name='del'
+    ),
+    path(
+        'v1/genres/<slug:slug>/',
+        GenreViewSet.as_view({'delete': 'delete_genre'}),
+        name='del'
+    ),
     path('v1/', include(router.urls)),
     path(
         'v1/auth/email/',
@@ -42,8 +48,4 @@ urlpatterns = [
         APISignUp.as_view(),
         name='signup'
     ),
-    path(
-        'v1/categories/<slug:slug>/',
-        CategoryViewSet.as_view({'delete': 'category_destroy'})
-    )
 ]

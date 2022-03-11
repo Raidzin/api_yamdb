@@ -112,20 +112,30 @@ class TitleViewSet(viewsets.ModelViewSet):
 
 class CategoryViewSet(viewsets.ModelViewSet):
     serializer_class = CategorySerializer
+    queryset = Category.objects.all()
     permission_classes = IsAuthorOrAdministratorOrReadOnly,
     pagination_class = PageNumberPagination
     filter_backends = SearchFilter,
     search_fields = 'name',
-    queryset = Category.objects.all()
+
+    def delete_category(self, *args, **kwargs):
+        category = get_object_or_404(Category, slug=kwargs.get('slug'))
+        category.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class GenreViewSet(viewsets.ModelViewSet):
     serializer_class = GenreSerializer
+    queryset = Genre.objects.all()
     permission_classes = IsAuthorOrAdministratorOrReadOnly,
     pagination_class = PageNumberPagination
     filter_backends = SearchFilter,
     search_fields = 'name',
-    queryset = Genre.objects.all()
+
+    def delete_genre(self, *args, **kwargs):
+        genre = get_object_or_404(Genre, slug=kwargs.get('slug'))
+        genre.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
