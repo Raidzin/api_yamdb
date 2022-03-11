@@ -318,6 +318,13 @@ class Test05ReviewAPI:
     def test_04_reviews_check_permission(self, client, admin_client, admin):
         reviews, titles, user, moderator = create_reviews(admin_client, admin)
         data = {'text': 'jdfk', 'score': 7}
+        print()
+        print()
+        print(f'/api/v1/titles/{titles[0]["id"]}/reviews/')
+        print(data)
+        print(client)
+        print()
+        print()
         response = client.post(f'/api/v1/titles/{titles[0]["id"]}/reviews/', data=data)
         assert response.status_code == 401, (
             'Проверьте, что при POST запросе `/api/v1/titles/{{title_id}}/reviews/` '

@@ -16,7 +16,7 @@ from reviews.models import (
     Category,
     Genre
 )
-from .permissions import (IsAdmin, IsAuthorOrAdministratorOrReadOnly)
+from .permissions import (IsAdmin, ReadOnlyOrAdmin, CreateOrModeratorDeleteOrAdmin)
 from .serializers import (ForAdminSerializer,
                           TokenSerializer,
                           UserSerializerOrReadOnly, ReviewSerializer,
@@ -100,9 +100,27 @@ class UserViewSet(viewsets.ModelViewSet):
 
 
 class TitleViewSet(viewsets.ModelViewSet):
-    permission_classes = IsAuthorOrAdministratorOrReadOnly,
+    # queryset = Title.objects.all()
+    permission_classes = ReadOnlyOrAdmin,
     pagination_class = PageNumberPagination
-    queryset = Title.objects.all()
+    filter_backends = SearchFilter,
+    search_fields = 'name',
+
+    def get_queryset(self):
+        genre_slug = self.request.query_params.get('genre')
+        category_slug = self.request.query_params.get('category')
+        year = self.request.query_params.get('year')
+        name = self.request.query_params.get('name')
+        queryset = Title.objects.all()
+        if genre_slug is not None:
+            queryset = queryset.filter(genre__slug=genre_slug)
+        if category_slug is not None:
+            queryset = queryset.filter(category__slug=category_slug)
+        if year is not None:
+            queryset = queryset.filter(year=year)
+        if name is not None:
+            queryset = queryset.filter(name__contains=name)
+        return queryset
 
     def get_serializer_class(self):
         if self.request._request.method in SAFE_METHODS:
@@ -113,7 +131,7 @@ class TitleViewSet(viewsets.ModelViewSet):
 class CategoryViewSet(viewsets.ModelViewSet):
     serializer_class = CategorySerializer
     queryset = Category.objects.all()
-    permission_classes = IsAuthorOrAdministratorOrReadOnly,
+    permission_classes = ReadOnlyOrAdmin,
     pagination_class = PageNumberPagination
     filter_backends = SearchFilter,
     search_fields = 'name',
@@ -127,7 +145,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
 class GenreViewSet(viewsets.ModelViewSet):
     serializer_class = GenreSerializer
     queryset = Genre.objects.all()
-    permission_classes = IsAuthorOrAdministratorOrReadOnly,
+    permission_classes = ReadOnlyOrAdmin,
     pagination_class = PageNumberPagination
     filter_backends = SearchFilter,
     search_fields = 'name',
@@ -140,7 +158,7 @@ class GenreViewSet(viewsets.ModelViewSet):
 
 class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
-    permission_classes = IsAuthorOrAdministratorOrReadOnly,
+    permission_classes = CreateOrModeratorDeleteOrAdmin,
 
     def get_queryset(self):
         title_id = self.kwargs.get('title_id')
@@ -155,7 +173,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
 class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
-    permission_classes = IsAuthorOrAdministratorOrReadOnly,
+    permission_classes = CreateOrModeratorDeleteOrAdmin,
 
     def get_queryset(self):
         review_id = self.kwargs.get('review_id')
