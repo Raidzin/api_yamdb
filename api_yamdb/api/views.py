@@ -4,7 +4,7 @@ from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated, SAFE_METHODS
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import AccessToken
@@ -20,7 +20,8 @@ from .permissions import (IsAdmin, IsAuthorOrAdministratorOrReadOnly)
 from .serializers import (ForAdminSerializer,
                           TokenSerializer,
                           UserSerializerOrReadOnly, ReviewSerializer,
-                          CommentSerializer, TitleSerializer,
+                          CommentSerializer, OutputTitleSerializer,
+                          InputTitleSerializer,
                           CategorySerializer, GenreSerializer,
                           )
 from .utils import generate_and_send_confirmation_code_to_email
@@ -99,10 +100,14 @@ class UserViewSet(viewsets.ModelViewSet):
 
 
 class TitleViewSet(viewsets.ModelViewSet):
-    serializer_class = TitleSerializer
     permission_classes = IsAuthorOrAdministratorOrReadOnly,
     pagination_class = PageNumberPagination
     queryset = Title.objects.all()
+
+    def get_serializer_class(self):
+        if self.request._request.method in SAFE_METHODS:
+            return OutputTitleSerializer
+        return InputTitleSerializer
 
 
 class CategoryViewSet(viewsets.ModelViewSet):

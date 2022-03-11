@@ -66,11 +66,6 @@ def create_titles(admin_client):
     data = {'name': 'Поворот туда', 'year': 2000, 'genre': [genres[0]['slug'], genres[1]['slug']],
             'category': categories[0]['slug'], 'description': 'Крутое пике'}
     response = admin_client.post('/api/v1/titles/', data=data)
-    print()
-    print()
-    print(response.json())
-    print()
-    print()
     data['id'] = response.json()['id']
     result.append(data)
     data = {'name': 'Проект', 'year': 2020, 'genre': [genres[2]['slug']], 'category': categories[1]['slug'],
@@ -85,6 +80,13 @@ def create_reviews(admin_client, admin):
     def create_review(uclient, title_id, text, score):
         data = {'text': text, 'score': score}
         response = uclient.post(f'/api/v1/titles/{title_id}/reviews/', data=data)
+        print()
+        print()
+        print(f'/api/v1/titles/{title_id}/reviews/')
+        print(data)
+        print(response.json())
+        print()
+        print()
         return response.json()['id']
 
     titles, _, _ = create_titles(admin_client)
