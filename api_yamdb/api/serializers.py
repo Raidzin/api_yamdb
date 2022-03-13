@@ -13,7 +13,7 @@ SCORE_ERROR = 'Оценка может быть от 1 до 10!'
 
 class TokenSerializer(serializers.Serializer):
     """Сериализатор для получения токена."""
-    username = serializers.CharField(max_length=200, required=True)
+    username = serializers.CharField(max_length=150, required=True)
     confirmation_code = serializers.CharField(max_length=200, required=True)
 
     def validate_username(self, value):

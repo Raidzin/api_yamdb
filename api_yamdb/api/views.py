@@ -1,5 +1,5 @@
 from django.shortcuts import get_object_or_404
-
+from django.contrib.auth.tokens import default_token_generator
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
@@ -7,9 +7,9 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated, SAFE_METHODS
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.tokens import AccessToken
 from users.models import User
-
 from reviews.models import Title, Review, Category, Genre
 from .permissions import (IsAdmin,
                           ReadOnlyOrAdmin,
@@ -28,14 +28,23 @@ class APISignUp(APIView):
 
     def post(self, request):
         serializer = UserSerializerOrReadOnly(data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            serializer.save()
-            generate_and_send_confirmation_code_to_email(
-                serializer.data['username'])
-            return Response(
-                {'email': serializer.data['email'],
-                 'username': serializer.data['username']},
-                status=status.HTTP_200_OK)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        generate_and_send_confirmation_code_to_email(
+            serializer.data['username'])
+        return Response(
+            {'email': serializer.data['email'],
+                'username': serializer.data['username']},
+            status=status.HTTP_200_OK)
+
+
+def get_tokens_for_user(user):
+    refresh = RefreshToken.for_user(user)
+
+    return {
+        'refresh': str(refresh),
+        'access': str(refresh.access_token),
+    }
 
 
 class APIToken(APIView):
@@ -44,16 +53,16 @@ class APIToken(APIView):
 
     def post(self, request):
         serializer = TokenSerializer(data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            user = get_object_or_404(
-                User, username=serializer.data['username'])
-            if user.confirmation_code == serializer.data['confirmation_code']:
-                token = AccessToken.for_user(user)
-                return Response(
-                    {'token': str(token)}, status=status.HTTP_200_OK)
-            return Response({
-                'confirmation code': 'Некорректный код подтверждения!'},
-                status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
+        user = get_object_or_404(
+            User, username=serializer.data['username'])
+        confirmation_code = request.data['confirmation_code']
+        if default_token_generator.check_token(user, confirmation_code):
+            token = AccessToken.for_user(user)
+            response = {'token': str(token['access'])}
+            return Response(response, status=status.HTTP_200_OK)
+        return Response(serializer.errors,
+                        status=status.HTTP_400_BAD_REQUEST)
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -87,11 +96,9 @@ class UserViewSet(viewsets.ModelViewSet):
                 data=request.data,
                 partial=True, many=False
             )
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data, status=status.HTTP_200_OK)
-            return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class CategoryViewSet(viewsets.ModelViewSet):

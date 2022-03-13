@@ -8,31 +8,30 @@ class User(AbstractUser):
     MODERATOR = 'moderator'
     USER = 'user'
 
-    ROLE = (
+    ROLES = (
         (ADMIN, ADMIN),
         (MODERATOR, MODERATOR),
         (USER, USER)
     )
     role = models.CharField(
-        max_length=10,
-        choices=ROLE,
+        max_length=20,
+        choices=ROLES,
         default=USER
     )
     email = models.EmailField(unique=True)
-    bio = models.CharField(
-        blank=True,
-        max_length=255
+    bio = models.TextField(
+        blank=True
     )
     username = models.CharField(max_length=150, unique=True, db_index=True)
 
     confirmation_code = models.CharField(max_length=50, blank=True)
 
     class Meta:
-        ordering = ('id',)
+        ordering = ('role',)
 
     @property
     def is_admin(self):
-        return self.is_superuser or self.role == self.ADMIN
+        return self.is_staff or self.role == self.ADMIN
 
     @property
     def is_moderator(self):
