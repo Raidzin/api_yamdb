@@ -25,10 +25,10 @@ class CreateOrModeratorDeleteOrAdmin(permissions.BasePermission):
             request.method in permissions.SAFE_METHODS
             or request.method == 'POST'
             and request.user.is_authenticated
-            or request.method == 'PATCH'
-            or request.method == 'DELETE'
             or request.user.is_authenticated
             and request.user.is_admin
+            or request.method == 'PATCH'
+            or request.method == 'DELETE'
         )
 
     def has_object_permission(self, request, view, obj):

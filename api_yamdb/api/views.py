@@ -94,37 +94,50 @@ class UserViewSet(viewsets.ModelViewSet):
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class CategoryViewSet(viewsets.ModelViewSet):
+SERIALIZER_ERROR = 'Необходимо определить класс сериализатора!'
+QUERYSET_ERROR = 'Необходимо определить queryset'
+
+
+class TitleInfoViewSet(viewsets.ModelViewSet):
+    @property
+    def serializer_class(self):
+        raise NotImplementedError(SERIALIZER_ERROR)
+
+    @property
+    def queryset(self):
+        raise NotImplementedError(SERIALIZER_ERROR)
+
+    permission_classes = ReadOnlyOrAdmin,
+    pagination_class = PageNumberPagination
+    filter_backends = SearchFilter,
+    search_fields = 'name',
+
+    def destroy(self, *args, **kwargs):
+        object = get_object_or_404(
+            self.get_queryset(),
+            slug=kwargs.get('slug')
+        )
+        object.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class CategoryViewSet(TitleInfoViewSet):
     serializer_class = CategorySerializer
     queryset = Category.objects.all()
-    permission_classes = ReadOnlyOrAdmin,
-    pagination_class = PageNumberPagination
-    filter_backends = SearchFilter,
-    search_fields = 'name',
-
-    def delete_category(self, *args, **kwargs):
-        category = get_object_or_404(Category, slug=kwargs.get('slug'))
-        category.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class GenreViewSet(viewsets.ModelViewSet):
+class GenreViewSet(TitleInfoViewSet):
     serializer_class = GenreSerializer
     queryset = Genre.objects.all()
-    permission_classes = ReadOnlyOrAdmin,
-    pagination_class = PageNumberPagination
-    filter_backends = SearchFilter,
-    search_fields = 'name',
-
-    def delete_genre(self, *args, **kwargs):
-        genre = get_object_or_404(Genre, slug=kwargs.get('slug'))
-        genre.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class TitleViewSet(viewsets.ModelViewSet):
+    queryset = Title.objects.all()
     permission_classes = ReadOnlyOrAdmin,
     pagination_class = PageNumberPagination
+
+    # filter_backends = SearchFilter,
+    # search_fields = 'genre__slug', 'category__slug', 'year', 'name'
 
     def get_queryset(self):
         genre_slug = self.request.query_params.get('genre')

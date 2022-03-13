@@ -9,6 +9,7 @@ from .views import (APISignUp, APIToken, UserViewSet, ReviewViewSet,
 router = routers.DefaultRouter()
 router.register('users', UserViewSet, basename='User')
 router.register('titles', TitleViewSet, basename='Title')
+# router.register(r'categories/(?P<slug>\d+)/', CategoryViewSet, basename='Category_object')
 router.register('categories', CategoryViewSet, basename='Category')
 router.register('genres', GenreViewSet, basename='Genre')
 router.register(
@@ -21,15 +22,16 @@ router.register(
     basename='comments'
 )
 
+
 urlpatterns = [
     path(
         'v1/categories/<slug:slug>/',
-        CategoryViewSet.as_view({'delete': 'delete_category'}),
+        CategoryViewSet.as_view({'delete': 'destroy'}),
         name='del'
     ),
     path(
         'v1/genres/<slug:slug>/',
-        GenreViewSet.as_view({'delete': 'delete_genre'}),
+        GenreViewSet.as_view({'delete': 'destroy'}),
         name='del'
     ),
     path('v1/', include(router.urls)),
