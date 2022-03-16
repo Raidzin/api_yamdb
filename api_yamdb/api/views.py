@@ -1,25 +1,28 @@
-from django.shortcuts import get_object_or_404
+from api_yamdb.settings import DEFAULT_FROM_EMAIL
 from django.contrib.auth.tokens import default_token_generator
+from django.core.mail import send_mail
+from django.shortcuts import get_object_or_404
 from rest_framework import filters, status, viewsets
+from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import AllowAny, IsAuthenticated, SAFE_METHODS
+from rest_framework.permissions import SAFE_METHODS, AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.tokens import AccessToken
+from reviews.models import Category, Genre, Review, Title
 from users.models import User
-from reviews.models import Title, Review, Category, Genre
-from .permissions import (IsAdmin,
-                          ReadOnlyOrAdmin,
-                          CreateOrModeratorDeleteOrAdmin)
-from .serializers import (ForAdminSerializer, TokenSerializer,
-                          UserSerializerOrReadOnly, ReviewSerializer,
-                          CommentSerializer, OutputTitleSerializer,
-                          InputTitleSerializer, CategorySerializer,
-                          GenreSerializer, )
-from .utils import generate_and_send_confirmation_code_to_email
+
+from .permissions import (CreateOrModeratorDeleteOrAdmin, IsAdmin,
+                          ReadOnlyOrAdmin)
+from .serializers import (CategorySerializer, CommentSerializer,
+                          ForAdminSerializer, GenreSerializer,
+                          InputTitleSerializer, OutputTitleSerializer,
+                          ReviewSerializer, SignupSerializer, TokenSerializer,
+                          UserSerializerOrReadOnly)
+
+CONFIRMATION_CODE = 'Код подтвержения для завершения регистрации'
+MESSAGE_FOR_YOUR_CONFIRMATION_CODE = 'Ваш код для получения JWT токена'
 
 
 class APISignUp(APIView):
@@ -27,24 +30,22 @@ class APISignUp(APIView):
     permission_classes = (AllowAny,)
 
     def post(self, request):
-        serializer = UserSerializerOrReadOnly(data=request.data)
+        serializer = SignupSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
-        generate_and_send_confirmation_code_to_email(
-            serializer.data['username'])
-        return Response(
-            {'email': serializer.data['email'],
-                'username': serializer.data['username']},
-            status=status.HTTP_200_OK)
-
-
-def get_tokens_for_user(user):
-    refresh = RefreshToken.for_user(user)
-
-    return {
-        'refresh': str(refresh),
-        'access': str(refresh.access_token),
-    }
+        if not User.objects.filter(username=request.data['username'],
+                                   email=request.data['email']).exists():
+            serializer.save()
+        user = User.objects.get(username=request.data['username'],
+                                email=request.data['email'])
+        confirmation_code = default_token_generator.make_token(user)
+        send_mail(
+            CONFIRMATION_CODE,
+            f'{MESSAGE_FOR_YOUR_CONFIRMATION_CODE} {confirmation_code}',
+            DEFAULT_FROM_EMAIL,
+            [request.data['email']],
+            fail_silently=False,
+        )
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class APIToken(APIView):
@@ -54,15 +55,27 @@ class APIToken(APIView):
     def post(self, request):
         serializer = TokenSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        user = get_object_or_404(
-            User, username=serializer.data['username'])
-        confirmation_code = request.data['confirmation_code']
-        if default_token_generator.check_token(user, confirmation_code):
-            token = AccessToken.for_user(user)
-            response = {'token': str(token['access'])}
-            return Response(response, status=status.HTTP_200_OK)
-        return Response(serializer.errors,
-                        status=status.HTTP_400_BAD_REQUEST)
+
+        username = serializer.data['username']
+        conf_code = serializer.data['confirmation_code']
+        user = get_object_or_404(User, username=username)
+
+        if (user is not None
+                and default_token_generator.check_token(user, conf_code)):
+            # Делаем юзера активным
+            user.is_active = True
+            user.save()
+        else:
+            response = {
+                'confirmation_code': 'Токен не валидный'
+            }
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+
+        token = Token.objects.get_or_create(user=user)
+        response = {
+            'token': token[0].key,
+        }
+        return Response(response, status=status.HTTP_200_OK)
 
 
 class UserViewSet(viewsets.ModelViewSet):
