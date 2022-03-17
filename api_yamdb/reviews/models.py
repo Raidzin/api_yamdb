@@ -49,7 +49,7 @@ class Title(models.Model):
     )
     description = models.TextField(
         verbose_name='Описание',
-        blank=True,
+        null=True,
     )
     year = models.IntegerField(
         verbose_name='Год',
@@ -65,12 +65,6 @@ class Title(models.Model):
         Genre,
         related_name='titles'
     )
-
-    @property
-    def rating(self):
-        return Review.objects.filter(
-            title__id=self.id
-        ).aggregate(models.Avg('score'))['score__avg']
 
     class Meta:
         ordering = '-year',

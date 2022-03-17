@@ -1,3 +1,5 @@
+from django.db.models import Avg
+
 from rest_framework import exceptions, serializers
 from rest_framework.validators import UniqueTogetherValidator, UniqueValidator
 from reviews.models import Comment, Review, Title, Category, Genre
@@ -43,12 +45,14 @@ class ForAdminSerializer(serializers.ModelSerializer):
 
 class UserSerializerOrReadOnly(ForAdminSerializer):
     """Сериалайзер пользователей(чтение)"""
+
     class Meta(ForAdminSerializer.Meta):
         read_only_fields = ('role',)
 
 
 class CategorySerializer(serializers.ModelSerializer):
     """Сериализатор категорий произведений."""
+
     class Meta:
         model = Category
         fields = ('name', 'slug')
@@ -56,23 +60,33 @@ class CategorySerializer(serializers.ModelSerializer):
 
 class GenreSerializer(serializers.ModelSerializer):
     """Сериализатор жанров произведений."""
+
     class Meta:
         model = Genre
         fields = ('name', 'slug')
 
 
-class OutputTitleSerializer(serializers.ModelSerializer):
+class BaseTitleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Title
+        fields = 'id', 'name', 'year', 'description', 'genre', 'category'
+
+
+class OutputTitleSerializer(BaseTitleSerializer):
     """Сериализатор произведений для отправки данных."""
     genre = GenreSerializer(many=True)
     category = CategorySerializer()
+    rating = serializers.SerializerMethodField()
 
-    class Meta:
-        model = Title
-        fields = (
-            'id', 'name', 'year', 'rating', 'description', 'genre', 'category')
+    def get_rating(self, obj):
+        return obj.reviews.all().aggregate(Avg('score'))['score__avg']
+
+    class Meta(BaseTitleSerializer.Meta):
+        read_only_fields = '__all__',
+        fields = 'id', 'name', 'year', 'rating',  'description', 'genre', 'category'
 
 
-class InputTitleSerializer(OutputTitleSerializer):
+class InputTitleSerializer(BaseTitleSerializer):
     """Сериализатор произведений для получения данных."""
     genre = serializers.SlugRelatedField(
         slug_field='slug',
