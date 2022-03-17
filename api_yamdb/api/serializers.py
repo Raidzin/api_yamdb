@@ -2,6 +2,7 @@ from rest_framework import exceptions, serializers
 from rest_framework.validators import UniqueTogetherValidator, UniqueValidator
 from reviews.models import Comment, Review
 from users.models import User
+from django.core.validators import MaxValueValidator, MinValueValidator
 
 from .utils import CurrentTitleDefault
 
@@ -19,6 +20,10 @@ class ReviewSerializer(serializers.ModelSerializer):
     title = serializers.HiddenField(
         default=CurrentTitleDefault())
 
+    score = serializers.IntegerField(
+        validators=[MaxValueValidator(10), MinValueValidator(1)]
+    )
+
     class Meta:
         fields = ('id', 'text', 'author', 'score', 'pub_date', 'title')
         model = Review
@@ -28,12 +33,6 @@ class ReviewSerializer(serializers.ModelSerializer):
                 fields=('author', 'title')
             )
         ]
-
-    def validate(self, data):
-        if not 1 <= data['score'] <= 10:
-            raise serializers.ValidationError(
-                'Оценка может быть от 1 до 10!')
-        return data
 
 
 class CommentSerializer(serializers.ModelSerializer):
