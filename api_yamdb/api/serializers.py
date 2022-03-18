@@ -2,6 +2,7 @@ from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator, UniqueValidator
 from reviews.models import Category, Comment, Genre, Review, Title
 from users.models import User
+from django.core.validators import MaxValueValidator, MinValueValidator
 
 from .utils import CurrentTitleDefault
 
@@ -84,12 +85,14 @@ class ForAdminSerializer(serializers.ModelSerializer):
 
 class UserSerializerOrReadOnly(ForAdminSerializer):
     """Сериалайзер пользователей(чтение)"""
+
     class Meta(ForAdminSerializer.Meta):
         read_only_fields = ('role',)
 
 
 class CategorySerializer(serializers.ModelSerializer):
     """Сериализатор категорий произведений."""
+
     class Meta:
         model = Category
         fields = ('name', 'slug')
@@ -97,23 +100,19 @@ class CategorySerializer(serializers.ModelSerializer):
 
 class GenreSerializer(serializers.ModelSerializer):
     """Сериализатор жанров произведений."""
+
     class Meta:
         model = Genre
         fields = ('name', 'slug')
 
 
-class OutputTitleSerializer(serializers.ModelSerializer):
-    """Сериализатор произведений для отправки данных."""
-    genre = GenreSerializer(many=True)
-    category = CategorySerializer()
-
+class BaseTitleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Title
-        fields = (
-            'id', 'name', 'year', 'rating', 'description', 'genre', 'category')
+        fields = 'id', 'name', 'year', 'description', 'genre', 'category'
 
 
-class InputTitleSerializer(OutputTitleSerializer):
+class InputTitleSerializer(BaseTitleSerializer):
     """Сериализатор произведений для получения данных."""
     genre = serializers.SlugRelatedField(
         slug_field='slug',
@@ -126,6 +125,17 @@ class InputTitleSerializer(OutputTitleSerializer):
     )
 
 
+class OutputTitleSerializer(BaseTitleSerializer):
+    """Сериализатор произведений для отправки данных."""
+    genre = GenreSerializer(many=True)
+    category = CategorySerializer()
+    rating = serializers.IntegerField()
+
+    class Meta(BaseTitleSerializer.Meta):
+        fields = 'id', 'name', 'year', 'rating', 'description', 'genre', 'category'
+        read_only_fields = '__all__',
+
+
 class ReviewSerializer(serializers.ModelSerializer):
     """Сериализатор отзывов."""
     author = serializers.SlugRelatedField(
@@ -135,6 +145,10 @@ class ReviewSerializer(serializers.ModelSerializer):
     )
     title = serializers.HiddenField(
         default=CurrentTitleDefault())
+
+    score = serializers.IntegerField(
+        validators=[MaxValueValidator(10), MinValueValidator(1)]
+    )
 
     class Meta:
         fields = ('id', 'text', 'author', 'score', 'pub_date', 'title')
@@ -146,10 +160,6 @@ class ReviewSerializer(serializers.ModelSerializer):
             )
         ]
 
-    def validate(self, data):
-        if not 1 <= data['score'] <= 10:
-            raise serializers.ValidationError(SCORE_ERROR)
-        return data
 
 
 class CommentSerializer(serializers.ModelSerializer):

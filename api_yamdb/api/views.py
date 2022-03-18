@@ -2,6 +2,8 @@ from api_yamdb.settings import DEFAULT_FROM_EMAIL
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
+from django.db.models import Avg
+
 from rest_framework import filters, status, viewsets
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
@@ -13,16 +15,22 @@ from rest_framework.views import APIView
 from reviews.models import Category, Genre, Review, Title
 from users.models import User
 
-from .permissions import (CreateOrModeratorDeleteOrAdmin, IsAdmin,
-                          ReadOnlyOrAdmin)
-from .serializers import (CategorySerializer, CommentSerializer,
-                          ForAdminSerializer, GenreSerializer,
-                          InputTitleSerializer, OutputTitleSerializer,
-                          ReviewSerializer, SignupSerializer, TokenSerializer,
-                          UserSerializerOrReadOnly)
 
 CONFIRMATION_CODE = 'Код подтвержения для завершения регистрации'
 MESSAGE_FOR_YOUR_CONFIRMATION_CODE = 'Ваш код для получения JWT токена'
+
+from reviews.models import Title, Review, Category, Genre
+from .permissions import (IsAdmin,
+                          ReadOnlyOrAdmin,
+                          CreateOrModeratorDeleteOrAdmin)
+from .serializers import (ForAdminSerializer, TokenSerializer,
+                          UserSerializerOrReadOnly, ReviewSerializer,
+                          CommentSerializer, OutputTitleSerializer,
+                          InputTitleSerializer, CategorySerializer,
+                          GenreSerializer, )
+from .utils import generate_and_send_confirmation_code_to_email
+from .filters import TitleFilter
+
 
 
 class APISignUp(APIView):
@@ -114,53 +122,51 @@ class UserViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class CategoryViewSet(viewsets.ModelViewSet):
+SERIALIZER_ERROR = 'Необходимо определить класс сериализатора!'
+QUERYSET_ERROR = 'Необходимо определить queryset'
+
+
+class TitleInfoViewSet(viewsets.ModelViewSet):
+    @property
+    def serializer_class(self):
+        raise NotImplementedError(SERIALIZER_ERROR)
+
+    @property
+    def queryset(self):
+        raise NotImplementedError(SERIALIZER_ERROR)
+
+    permission_classes = ReadOnlyOrAdmin,
+    pagination_class = PageNumberPagination
+    filter_backends = SearchFilter,
+    search_fields = 'name',
+
+    def destroy(self, *args, **kwargs):
+        object = get_object_or_404(
+            self.get_queryset(),
+            slug=kwargs.get('slug')
+        )
+        object.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class CategoryViewSet(TitleInfoViewSet):
     serializer_class = CategorySerializer
     queryset = Category.objects.all()
-    permission_classes = ReadOnlyOrAdmin,
-    pagination_class = PageNumberPagination
-    filter_backends = SearchFilter,
-    search_fields = 'name',
-
-    def delete_category(self, *args, **kwargs):
-        category = get_object_or_404(Category, slug=kwargs.get('slug'))
-        category.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class GenreViewSet(viewsets.ModelViewSet):
+class GenreViewSet(TitleInfoViewSet):
     serializer_class = GenreSerializer
     queryset = Genre.objects.all()
-    permission_classes = ReadOnlyOrAdmin,
-    pagination_class = PageNumberPagination
-    filter_backends = SearchFilter,
-    search_fields = 'name',
-
-    def delete_genre(self, *args, **kwargs):
-        genre = get_object_or_404(Genre, slug=kwargs.get('slug'))
-        genre.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class TitleViewSet(viewsets.ModelViewSet):
     permission_classes = ReadOnlyOrAdmin,
     pagination_class = PageNumberPagination
+    filter_backends = TitleFilter,
+    filter_fields = 'genre__slug', 'category__slug', 'year', 'name'
 
     def get_queryset(self):
-        genre_slug = self.request.query_params.get('genre')
-        category_slug = self.request.query_params.get('category')
-        year = self.request.query_params.get('year')
-        name = self.request.query_params.get('name')
-        queryset = Title.objects.all()
-        if genre_slug is not None:
-            queryset = queryset.filter(genre__slug=genre_slug)
-        if category_slug is not None:
-            queryset = queryset.filter(category__slug=category_slug)
-        if year is not None:
-            queryset = queryset.filter(year=year)
-        if name is not None:
-            queryset = queryset.filter(name__contains=name)
-        return queryset
+        return Title.objects.annotate(rating=Avg('reviews__score'))
 
     def get_serializer_class(self):
         if self.request._request.method in SAFE_METHODS:
