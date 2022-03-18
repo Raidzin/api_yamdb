@@ -43,12 +43,14 @@ class ForAdminSerializer(serializers.ModelSerializer):
 
 class UserSerializerOrReadOnly(ForAdminSerializer):
     """Сериалайзер пользователей(чтение)"""
+
     class Meta(ForAdminSerializer.Meta):
         read_only_fields = ('role',)
 
 
 class CategorySerializer(serializers.ModelSerializer):
     """Сериализатор категорий произведений."""
+
     class Meta:
         model = Category
         fields = ('name', 'slug')
@@ -56,23 +58,19 @@ class CategorySerializer(serializers.ModelSerializer):
 
 class GenreSerializer(serializers.ModelSerializer):
     """Сериализатор жанров произведений."""
+
     class Meta:
         model = Genre
         fields = ('name', 'slug')
 
 
-class OutputTitleSerializer(serializers.ModelSerializer):
-    """Сериализатор произведений для отправки данных."""
-    genre = GenreSerializer(many=True)
-    category = CategorySerializer()
-
+class BaseTitleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Title
-        fields = (
-            'id', 'name', 'year', 'rating', 'description', 'genre', 'category')
+        fields = 'id', 'name', 'year', 'description', 'genre', 'category'
 
 
-class InputTitleSerializer(OutputTitleSerializer):
+class InputTitleSerializer(BaseTitleSerializer):
     """Сериализатор произведений для получения данных."""
     genre = serializers.SlugRelatedField(
         slug_field='slug',
@@ -83,6 +81,17 @@ class InputTitleSerializer(OutputTitleSerializer):
         slug_field='slug',
         queryset=Category.objects.all(),
     )
+
+
+class OutputTitleSerializer(BaseTitleSerializer):
+    """Сериализатор произведений для отправки данных."""
+    genre = GenreSerializer(many=True)
+    category = CategorySerializer()
+    rating = serializers.IntegerField()
+
+    class Meta(BaseTitleSerializer.Meta):
+        fields = 'id', 'name', 'year', 'rating', 'description', 'genre', 'category'
+        read_only_fields = '__all__',
 
 
 class ReviewSerializer(serializers.ModelSerializer):
