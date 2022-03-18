@@ -1,22 +1,23 @@
+from datetime import datetime
+
 from django.contrib.auth import get_user_model
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 User = get_user_model()
 
+FUTURE_ERROR = 'Нельзя сохранять анонсированные произведения'
+
 
 class Category(models.Model):
-    """
-    Категории произведений.
-
-    Поля: id, name, slug, titles.
-    """
     name = models.TextField(
         verbose_name='Название',
-        max_length=150
+        max_length=256,
     )
     slug = models.SlugField(
-        verbose_name='идентификатор'
+        verbose_name='идентификатор',
+        max_length=50,
+        unique=True,
     )
 
     class Meta:
@@ -28,40 +29,41 @@ class Category(models.Model):
 
 
 class Genre(models.Model):
-    """
-    Жанры.
-
-    Поля: id, name, slug, titles.
-    """
     name = models.TextField(
         verbose_name='Название',
-        max_length=150,
+        max_length=256,
     )
     slug = models.SlugField(
-        verbose_name='идентификатор'
+        verbose_name='идентификатор',
+        max_length=50,
+        unique=True,
     )
 
     class Meta:
         verbose_name = 'Жанр'
         verbose_name_plural = 'Жанры'
-        ordering = ('id',)
 
     def __str__(self):
         return self.name
 
 
 class Title(models.Model):
-    """
-    Произведения.
-
-    Поля: id, name, year, category, genres.
-    """
     name = models.TextField(
         verbose_name='Название',
         max_length=150,
     )
+    description = models.TextField(
+        verbose_name='Описание',
+        null=True,
+    )
     year = models.IntegerField(
         verbose_name='Год',
+        validators=(
+            MaxValueValidator(
+                datetime.now().year,
+                FUTURE_ERROR
+            ),
+        ),
     )
     category = models.ForeignKey(
         Category,
@@ -70,13 +72,13 @@ class Title(models.Model):
         related_name='titles',
         verbose_name='Категория'
     )
-    genres = models.ManyToManyField(
+    genre = models.ManyToManyField(
         Genre,
         related_name='titles'
     )
 
     class Meta:
-        ordering = '-year',
+        ordering = '-year', 'name'
         verbose_name = 'Произведение'
         verbose_name_plural = 'Произведения'
 
