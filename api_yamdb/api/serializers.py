@@ -1,5 +1,3 @@
-from django.db.models import Avg
-
 from rest_framework import exceptions, serializers
 from rest_framework.validators import UniqueTogetherValidator, UniqueValidator
 from reviews.models import Comment, Review, Title, Category, Genre

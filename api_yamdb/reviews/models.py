@@ -1,18 +1,23 @@
+from datetime import datetime
+
 from django.contrib.auth import get_user_model
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 User = get_user_model()
 
+FUTURE_ERROR = 'Нельзя сохранять анонсированные произведения'
+
 
 class Category(models.Model):
     name = models.TextField(
         verbose_name='Название',
-        max_length=150
+        max_length=256,
     )
     slug = models.SlugField(
         verbose_name='идентификатор',
-        unique=True
+        max_length=50,
+        unique=True,
     )
 
     class Meta:
@@ -26,17 +31,17 @@ class Category(models.Model):
 class Genre(models.Model):
     name = models.TextField(
         verbose_name='Название',
-        max_length=150,
+        max_length=256,
     )
     slug = models.SlugField(
         verbose_name='идентификатор',
-        unique=True
+        max_length=50,
+        unique=True,
     )
 
     class Meta:
         verbose_name = 'Жанр'
         verbose_name_plural = 'Жанры'
-        ordering = ('id',)
 
     def __str__(self):
         return self.name
@@ -53,6 +58,12 @@ class Title(models.Model):
     )
     year = models.IntegerField(
         verbose_name='Год',
+        validators=(
+            MaxValueValidator(
+                datetime.now().year,
+                FUTURE_ERROR
+            ),
+        ),
     )
     category = models.ForeignKey(
         Category,
@@ -67,7 +78,7 @@ class Title(models.Model):
     )
 
     class Meta:
-        ordering = '-year',
+        ordering = '-year', 'name'
         verbose_name = 'Произведение'
         verbose_name_plural = 'Произведения'
 
