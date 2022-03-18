@@ -1,6 +1,6 @@
-from rest_framework import exceptions, serializers
+from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator, UniqueValidator
-from reviews.models import Comment, Review, Title, Category, Genre
+from reviews.models import Category, Comment, Genre, Review, Title
 from users.models import User
 from django.core.validators import MaxValueValidator, MinValueValidator
 
@@ -14,16 +14,57 @@ SCORE_ERROR = 'Оценка может быть от 1 до 10!'
 
 class TokenSerializer(serializers.Serializer):
     """Сериализатор для получения токена."""
-    username = serializers.CharField(max_length=200, required=True)
-    confirmation_code = serializers.CharField(max_length=200, required=True)
+    username = serializers.CharField(
+        required=True
+    )
+    confirmation_code = serializers.CharField(
+        required=True,
+    )
+
+
+class SignupSerializer(serializers.ModelSerializer):
+    """Сериализатор регистрации."""
+    email = serializers.EmailField(
+        required=True,
+    )
+    username = serializers.CharField(
+        required=True,
+    )
 
     def validate_username(self, value):
-        """Зарезервированное имя использовать нельзя."""
         if value == RESERVED_NAME:
             raise serializers.ValidationError(RESERVED_NAME_ERROR)
-        if not User.objects.filter(username=value).exists():
-            raise exceptions.NotFound(USER_NOT_FOUND_ERROR)
         return value
+
+    def validate(self, attrs):
+        user_by_email = User.objects.filter(
+            email=attrs['email']).exists()
+        user_by_username = User.objects.filter(
+            username=attrs['username']).exists()
+        # Проверка на связь почты и юзернейма
+        not_valid = user_by_email != user_by_username
+        if user_by_email and not_valid:
+            raise serializers.ValidationError(
+                {"email": f"Адрес '{attrs['email']}' уже занят"})
+        if user_by_username and not_valid:
+            raise serializers.ValidationError(
+                {"username": f"Юзернейм '{attrs['username']}' уже занят"})
+
+        return attrs
+
+    def create(self, validated_data):
+        user, created = User.objects.get_or_create(
+            username=validated_data['username'],
+            email=validated_data['email'],
+            defaults={'is_active': False},
+        )
+        # Делаем юзера неактивным, пока он не подвертит свой токен
+        user.save()
+        return user
+
+    class Meta:
+        model = User
+        fields = ('username', 'email')
 
 
 class ForAdminSerializer(serializers.ModelSerializer):

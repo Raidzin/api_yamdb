@@ -1,8 +1,7 @@
 from django.urls import include, path
 from rest_framework import routers
 
-from .utils import generate_and_send_confirmation_code_to_email
-from .views import (APISignUp, APIToken, UserViewSet, ReviewViewSet,
+from .views import (UserViewSet, ReviewViewSet,
                     CommentViewSet, TitleViewSet,
                     CategoryViewSet, GenreViewSet)
 
@@ -33,20 +32,6 @@ urlpatterns = [
         GenreViewSet.as_view({'delete': 'destroy'}),
         name='delete_genre'
     ),
-    path('v1/', include(router_v1.urls)),
-    path(
-        'v1/auth/email/',
-        generate_and_send_confirmation_code_to_email,
-        name='confirmation_code'
-    ),
-    path(
-        'v1/auth/token/',
-        APIToken.as_view(),
-        name='token'
-    ),
-    path(
-        'v1/auth/signup/',
-        APISignUp.as_view(),
-        name='signup'
-    ),
+    path('v1/', include(router.urls)),
+    path('v1/auth/', include('users.urls')),
 ]
