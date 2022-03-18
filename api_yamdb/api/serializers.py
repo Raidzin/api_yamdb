@@ -1,15 +1,18 @@
-from rest_framework import serializers
-from rest_framework.validators import UniqueTogetherValidator, UniqueValidator
-from reviews.models import Category, Comment, Genre, Review, Title
-from users.models import User
 from django.core.validators import MaxValueValidator, MinValueValidator
 
+from rest_framework import serializers
+from rest_framework.validators import UniqueTogetherValidator, UniqueValidator
+
+from reviews.models import Category, Comment, Genre, Review, Title
+from users.models import User
 from .utils import CurrentTitleDefault
 
 RESERVED_NAME = 'me'
 RESERVED_NAME_ERROR = 'Имя пользователя "me" использовать нельзя.'
 USER_NOT_FOUND_ERROR = 'Пользователя с таким именем не существует.'
 SCORE_ERROR = 'Оценка может быть от 1 до 10!'
+USERNAME_RESERVED = "Юзернейм '{}' уже занят"
+EMAIL_RESERVED = "Адрес '{}' уже занят"
 
 
 class TokenSerializer(serializers.Serializer):
@@ -45,10 +48,10 @@ class SignupSerializer(serializers.ModelSerializer):
         not_valid = user_by_email != user_by_username
         if user_by_email and not_valid:
             raise serializers.ValidationError(
-                {"email": f"Адрес '{attrs['email']}' уже занят"})
+                {"email": EMAIL_RESERVED.format(attrs['email'])})
         if user_by_username and not_valid:
             raise serializers.ValidationError(
-                {"username": f"Юзернейм '{attrs['username']}' уже занят"})
+                {"username": USERNAME_RESERVED.format(attrs['username'])})
 
         return attrs
 
@@ -107,6 +110,8 @@ class GenreSerializer(serializers.ModelSerializer):
 
 
 class BaseTitleSerializer(serializers.ModelSerializer):
+    """Базовый сериализатор для произведений."""
+
     class Meta:
         model = Title
         fields = 'id', 'name', 'year', 'description', 'genre', 'category'
@@ -132,7 +137,8 @@ class OutputTitleSerializer(BaseTitleSerializer):
     rating = serializers.IntegerField()
 
     class Meta(BaseTitleSerializer.Meta):
-        fields = 'id', 'name', 'year', 'rating', 'description', 'genre', 'category'
+        fields = ('id', 'name', 'year', 'rating',
+                  'description', 'genre', 'category')
         read_only_fields = '__all__',
 
 
@@ -144,7 +150,8 @@ class ReviewSerializer(serializers.ModelSerializer):
         slug_field='username'
     )
     title = serializers.HiddenField(
-        default=CurrentTitleDefault())
+        default=CurrentTitleDefault()
+    )
 
     score = serializers.IntegerField(
         validators=[MaxValueValidator(10), MinValueValidator(1)]
@@ -161,11 +168,11 @@ class ReviewSerializer(serializers.ModelSerializer):
         ]
 
 
-
 class CommentSerializer(serializers.ModelSerializer):
     """Сериализатор комментариев."""
     author = serializers.SlugRelatedField(
-        read_only=True, slug_field='username'
+        read_only=True,
+        slug_field='username'
     )
 
     class Meta:

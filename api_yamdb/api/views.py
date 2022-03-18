@@ -1,36 +1,35 @@
-from api_yamdb.settings import DEFAULT_FROM_EMAIL
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
-from django.shortcuts import get_object_or_404
 from django.db.models import Avg
+from django.shortcuts import get_object_or_404
 
 from rest_framework import filters, status, viewsets
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
-from rest_framework.filters import SearchFilter
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import SAFE_METHODS, AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from reviews.models import Category, Genre, Review, Title
-from users.models import User
 
+from api_yamdb.settings import DEFAULT_FROM_EMAIL
+from users.models import User
+from reviews.models import Title, Review, Category, Genre
+from .filters import TitleFilter
+from .permissions import (
+    IsAdmin,
+    ReadOnlyOrAdmin,
+    CreateOrModeratorDeleteOrAdmin
+)
+from .serializers import (
+    ForAdminSerializer, UserSerializerOrReadOnly,
+    SignupSerializer, TokenSerializer,
+    OutputTitleSerializer, InputTitleSerializer,
+    CategorySerializer, GenreSerializer,
+    ReviewSerializer, CommentSerializer,
+)
 
 CONFIRMATION_CODE = 'Код подтвержения для завершения регистрации'
 MESSAGE_FOR_YOUR_CONFIRMATION_CODE = 'Ваш код для получения JWT токена'
-
-from reviews.models import Title, Review, Category, Genre
-from .permissions import (IsAdmin,
-                          ReadOnlyOrAdmin,
-                          CreateOrModeratorDeleteOrAdmin)
-from .serializers import (ForAdminSerializer, TokenSerializer,
-                          UserSerializerOrReadOnly, ReviewSerializer,
-                          CommentSerializer, OutputTitleSerializer,
-                          InputTitleSerializer, CategorySerializer,
-                          GenreSerializer, )
-from .utils import generate_and_send_confirmation_code_to_email
-from .filters import TitleFilter
-
 
 
 class APISignUp(APIView):
@@ -40,8 +39,10 @@ class APISignUp(APIView):
     def post(self, request):
         serializer = SignupSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        if not User.objects.filter(username=request.data['username'],
-                                   email=request.data['email']).exists():
+        if not User.objects.filter(
+                username=request.data['username'],
+                email=request.data['email']
+        ).exists():
             serializer.save()
         user = User.objects.get(username=request.data['username'],
                                 email=request.data['email'])
@@ -137,7 +138,7 @@ class TitleInfoViewSet(viewsets.ModelViewSet):
 
     permission_classes = ReadOnlyOrAdmin,
     pagination_class = PageNumberPagination
-    filter_backends = SearchFilter,
+    filter_backends = filters.SearchFilter,
     search_fields = 'name',
 
     def destroy(self, *args, **kwargs):
