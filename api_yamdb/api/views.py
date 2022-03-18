@@ -1,4 +1,5 @@
 from django.shortcuts import get_object_or_404
+from django.db.models import Avg
 
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
@@ -20,6 +21,7 @@ from .serializers import (ForAdminSerializer, TokenSerializer,
                           InputTitleSerializer, CategorySerializer,
                           GenreSerializer, )
 from .utils import generate_and_send_confirmation_code_to_email
+from .filters import TitleFilter
 
 
 class APISignUp(APIView):
@@ -132,28 +134,13 @@ class GenreViewSet(TitleInfoViewSet):
 
 
 class TitleViewSet(viewsets.ModelViewSet):
-    queryset = Title.objects.all()
     permission_classes = ReadOnlyOrAdmin,
     pagination_class = PageNumberPagination
-
-    # filter_backends = SearchFilter,
-    # search_fields = 'genre__slug', 'category__slug', 'year', 'name'
+    filter_backends = TitleFilter,
+    filter_fields = 'genre__slug', 'category__slug', 'year', 'name'
 
     def get_queryset(self):
-        genre_slug = self.request.query_params.get('genre')
-        category_slug = self.request.query_params.get('category')
-        year = self.request.query_params.get('year')
-        name = self.request.query_params.get('name')
-        queryset = Title.objects.all()
-        if genre_slug is not None:
-            queryset = queryset.filter(genre__slug=genre_slug)
-        if category_slug is not None:
-            queryset = queryset.filter(category__slug=category_slug)
-        if year is not None:
-            queryset = queryset.filter(year=year)
-        if name is not None:
-            queryset = queryset.filter(name__contains=name)
-        return queryset
+        return Title.objects.annotate(rating=Avg('reviews__score'))
 
     def get_serializer_class(self):
         if self.request._request.method in SAFE_METHODS:
