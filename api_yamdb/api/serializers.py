@@ -44,7 +44,6 @@ class SignupSerializer(serializers.ModelSerializer):
             email=attrs['email']).exists()
         user_by_username = User.objects.filter(
             username=attrs['username']).exists()
-        # Проверка на связь почты и юзернейма
         not_valid = user_by_email != user_by_username
         if user_by_email and not_valid:
             raise serializers.ValidationError(
@@ -61,7 +60,6 @@ class SignupSerializer(serializers.ModelSerializer):
             email=validated_data['email'],
             defaults={'is_active': False},
         )
-        # Делаем юзера неактивным, пока он не подвертит свой токен
         user.save()
         return user
 

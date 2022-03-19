@@ -66,12 +66,12 @@ class APIToken(APIView):
         serializer.is_valid(raise_exception=True)
 
         username = serializer.data['username']
-        conf_code = serializer.data['confirmation_code']
+        confirmation_code = serializer.data['confirmation_code']
         user = get_object_or_404(User, username=username)
 
         if (user is not None
-                and default_token_generator.check_token(user, conf_code)):
-            # Делаем юзера активным
+                and default_token_generator.check_token(
+                    user, confirmation_code)):
             user.is_active = True
             user.save()
         else:
