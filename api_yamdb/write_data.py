@@ -14,6 +14,3 @@ while True:
         break
     cur.execute(line.strip())
 sql_file.close()
-
-
-
