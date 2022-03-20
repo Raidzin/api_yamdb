@@ -12,8 +12,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from api_yamdb.settings import DEFAULT_FROM_EMAIL
-from users.models import User
-from reviews.models import Title, Review, Category, Genre
+from reviews.models import User, Title, Category, Genre, Review
 from .filters import TitleFilter
 from .permissions import (
     IsAdmin,
@@ -28,7 +27,7 @@ from .serializers import (
     ReviewSerializer, CommentSerializer,
 )
 
-CONFIRMATION_CODE = 'Код подтвержения для завершения регистрации'
+CONFIRMATION_CODE = 'Код подтверждения для завершения регистрации'
 MESSAGE_FOR_YOUR_CONFIRMATION_CODE = 'Ваш код для получения JWT токена'
 
 
@@ -123,30 +122,17 @@ class UserViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-SERIALIZER_ERROR = 'Необходимо определить класс сериализатора!'
-QUERYSET_ERROR = 'Необходимо определить queryset'
-
-
 class TitleInfoViewSet(viewsets.ModelViewSet):
-    @property
-    def serializer_class(self):
-        raise NotImplementedError(SERIALIZER_ERROR)
-
-    @property
-    def queryset(self):
-        raise NotImplementedError(SERIALIZER_ERROR)
-
     permission_classes = ReadOnlyOrAdmin,
     pagination_class = PageNumberPagination
     filter_backends = filters.SearchFilter,
     search_fields = 'name',
 
     def destroy(self, *args, **kwargs):
-        object = get_object_or_404(
+        get_object_or_404(
             self.get_queryset(),
             slug=kwargs.get('slug')
-        )
-        object.delete()
+        ).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 

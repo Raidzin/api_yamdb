@@ -3,20 +3,18 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator, UniqueValidator
 
-from reviews.models import Category, Comment, Genre, Review, Title
-from users.models import User
+from reviews.models import Category, Comment, Genre, Review, Title, User
 from .utils import CurrentTitleDefault
 
 RESERVED_NAME = 'me'
 RESERVED_NAME_ERROR = 'Имя пользователя "me" использовать нельзя.'
 USER_NOT_FOUND_ERROR = 'Пользователя с таким именем не существует.'
 SCORE_ERROR = 'Оценка может быть от 1 до 10!'
-USERNAME_RESERVED = "Юзернейм '{}' уже занят"
-EMAIL_RESERVED = "Адрес '{}' уже занят"
+OCCUPIED_USERNAME_ERROR = "Юзернейм '{}' уже занят"
+OCCUPIED_EMAIL_ERROR = "Адрес '{}' уже занят"
 
 
 class TokenSerializer(serializers.Serializer):
-    """Сериализатор для получения токена."""
     username = serializers.CharField(
         required=True
     )
@@ -26,7 +24,6 @@ class TokenSerializer(serializers.Serializer):
 
 
 class SignupSerializer(serializers.ModelSerializer):
-    """Сериализатор регистрации."""
     email = serializers.EmailField(
         required=True,
     )
@@ -47,10 +44,11 @@ class SignupSerializer(serializers.ModelSerializer):
         not_valid = user_by_email != user_by_username
         if user_by_email and not_valid:
             raise serializers.ValidationError(
-                {"email": EMAIL_RESERVED.format(attrs['email'])})
+                {"email": OCCUPIED_EMAIL_ERROR.format(attrs['email'])})
         if user_by_username and not_valid:
             raise serializers.ValidationError(
-                {"username": USERNAME_RESERVED.format(attrs['username'])})
+                {"username": OCCUPIED_USERNAME_ERROR.format(
+                    attrs['username'])})
 
         return attrs
 
@@ -69,7 +67,6 @@ class SignupSerializer(serializers.ModelSerializer):
 
 
 class ForAdminSerializer(serializers.ModelSerializer):
-    """Сериализатор для пользователей со статусом admin."""
     email = serializers.EmailField(
         validators=[UniqueValidator(queryset=User.objects.all())])
 
@@ -85,38 +82,29 @@ class ForAdminSerializer(serializers.ModelSerializer):
 
 
 class UserSerializerOrReadOnly(ForAdminSerializer):
-    """Сериалайзер пользователей(чтение)"""
-
     class Meta(ForAdminSerializer.Meta):
         read_only_fields = ('role',)
 
 
 class CategorySerializer(serializers.ModelSerializer):
-    """Сериализатор категорий произведений."""
-
     class Meta:
         model = Category
         fields = ('name', 'slug')
 
 
 class GenreSerializer(serializers.ModelSerializer):
-    """Сериализатор жанров произведений."""
-
     class Meta:
         model = Genre
         fields = ('name', 'slug')
 
 
 class BaseTitleSerializer(serializers.ModelSerializer):
-    """Базовый сериализатор для произведений."""
-
     class Meta:
         model = Title
         fields = 'id', 'name', 'year', 'description', 'genre', 'category'
 
 
 class InputTitleSerializer(BaseTitleSerializer):
-    """Сериализатор произведений для получения данных."""
     genre = serializers.SlugRelatedField(
         slug_field='slug',
         queryset=Genre.objects.all(),
@@ -129,7 +117,6 @@ class InputTitleSerializer(BaseTitleSerializer):
 
 
 class OutputTitleSerializer(BaseTitleSerializer):
-    """Сериализатор произведений для отправки данных."""
     genre = GenreSerializer(many=True)
     category = CategorySerializer()
     rating = serializers.IntegerField()
@@ -141,7 +128,6 @@ class OutputTitleSerializer(BaseTitleSerializer):
 
 
 class ReviewSerializer(serializers.ModelSerializer):
-    """Сериализатор отзывов."""
     author = serializers.SlugRelatedField(
         default=serializers.CurrentUserDefault(),
         read_only=True,
@@ -167,7 +153,6 @@ class ReviewSerializer(serializers.ModelSerializer):
 
 
 class CommentSerializer(serializers.ModelSerializer):
-    """Сериализатор комментариев."""
     author = serializers.SlugRelatedField(
         read_only=True,
         slug_field='username'

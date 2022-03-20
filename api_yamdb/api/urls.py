@@ -5,6 +5,8 @@ from .views import (UserViewSet, ReviewViewSet,
                     CommentViewSet, TitleViewSet,
                     CategoryViewSet, GenreViewSet)
 
+from api.views import APIToken, APISignUp
+
 router_v1 = routers.DefaultRouter()
 router_v1.register('users', UserViewSet, basename='user')
 router_v1.register('titles', TitleViewSet, basename='title')
@@ -20,6 +22,18 @@ router_v1.register(
     basename='comments'
 )
 
+auth_urls = [
+    path(
+        'token/',
+        APIToken.as_view(),
+        name='token'
+    ),
+    path(
+        'signup/',
+        APISignUp.as_view(),
+        name='signup'
+    ),
+]
 
 urlpatterns = [
     path(
@@ -33,5 +47,5 @@ urlpatterns = [
         name='delete_genre'
     ),
     path('v1/', include(router_v1.urls)),
-    path('v1/auth/', include('users.urls')),
+    path('v1/auth/', include(auth_urls)),
 ]
