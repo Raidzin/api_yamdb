@@ -49,7 +49,9 @@ Cоздать и активировать виртуальное окружен�
 
 Обновить pip и установить зависимости из файла requirements.txt
 
-`python -m pip install --upgrade pip pip install -r requirements.txt`
+`python -m pip install --upgrade pip`
+
+`pip install -r requirements.txt`
 
 Перейти в директорию api_yamdb
 
@@ -71,9 +73,13 @@ Cоздать и активировать виртуальное окружен�
 
 http://127.0.0.1:8000/redoc/
 
-Загрузить тестовые данные можно с помощью скрипта `write_data.py`
+Загрузить тестовые данные можно с помощью скрипта
+
+`cd api_yamdb`
+
+`python write_data.py`
 
 ### Авторы проекта:
-- https://github.com/Raidzin
-- https://github.com/Valeria7317
-- https://github.com/chin0318
+- [Алексей Гончарук](https://github.com/Raidzin "Github")
+- [Валерия Егорова](https://github.com/Valeria7317 "Github")
+- [Дмитрий Осипов](https://github.com/chin0318 "Github")
