@@ -29,7 +29,7 @@ class User(AbstractUser):
     )
     username = models.CharField(max_length=150, unique=True, db_index=True)
 
-    confirmation_code = models.CharField(max_length=50, blank=True)
+    confirmation_code = models.CharField(max_length=50, blank=True, null=True)
 
     class Meta:
         ordering = ('role',)
