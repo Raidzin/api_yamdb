@@ -30,7 +30,8 @@ def validate_username(value):
 
 def email_validate(email):
     try:
-        validate_email(email)
+        if not User.objects.filter(email=email).exists():
+            validate_email(email)
     except ValidationError:
         raise ValidationError(
             {'email': 'Введите корректный email.'}
