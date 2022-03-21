@@ -1,87 +1,48 @@
 from django.core.validators import MaxValueValidator, MinValueValidator
 
 from rest_framework import serializers
-from rest_framework.validators import UniqueTogetherValidator, UniqueValidator
+from rest_framework.validators import UniqueTogetherValidator
 
 from reviews.models import Category, Comment, Genre, Review, Title, User
-from .utils import CurrentTitleDefault
+from .utils import CurrentTitleDefault, validate_username, email_validate
 
-RESERVED_NAME = 'me'
-RESERVED_NAME_ERROR = 'Имя пользователя "me" использовать нельзя.'
-USER_NOT_FOUND_ERROR = 'Пользователя с таким именем не существует.'
+
 SCORE_ERROR = 'Оценка может быть от 1 до 10!'
-OCCUPIED_USERNAME_ERROR = "Юзернейм '{}' уже занят"
-OCCUPIED_EMAIL_ERROR = "Адрес '{}' уже занят"
+USERNAME_RE = '^[A-Za-z0-9@.+-_]+$'
 
 
 class TokenSerializer(serializers.Serializer):
-    username = serializers.CharField(
-        required=True
+    username = serializers.RegexField(
+        regex=USERNAME_RE, max_length=150, required=True,
+        validators=[validate_username]
     )
     confirmation_code = serializers.CharField(
         required=True,
     )
 
 
-class SignupSerializer(serializers.ModelSerializer):
+class SignupSerializer(serializers.Serializer):
     email = serializers.EmailField(
         required=True,
+        validators=[email_validate]
     )
     username = serializers.CharField(
-        required=True,
+        required=True, validators=[validate_username]
     )
-
-    def validate_username(self, value):
-        if value == RESERVED_NAME:
-            raise serializers.ValidationError(RESERVED_NAME_ERROR)
-        return value
-
-    def validate(self, attrs):
-        user_by_email = User.objects.filter(
-            email=attrs['email']).exists()
-        user_by_username = User.objects.filter(
-            username=attrs['username']).exists()
-        not_valid = user_by_email != user_by_username
-        if user_by_email and not_valid:
-            raise serializers.ValidationError(
-                {"email": OCCUPIED_EMAIL_ERROR.format(attrs['email'])})
-        if user_by_username and not_valid:
-            raise serializers.ValidationError(
-                {"username": OCCUPIED_USERNAME_ERROR.format(
-                    attrs['username'])})
-
-        return attrs
-
-    def create(self, validated_data):
-        user, created = User.objects.get_or_create(
-            username=validated_data['username'],
-            email=validated_data['email'],
-            defaults={'is_active': False},
-        )
-        user.save()
-        return user
-
-    class Meta:
-        model = User
-        fields = ('username', 'email')
 
 
 class ForAdminSerializer(serializers.ModelSerializer):
-    email = serializers.EmailField(
-        validators=[UniqueValidator(queryset=User.objects.all())])
+    username = serializers.CharField(validators=[validate_username])
 
     class Meta:
         model = User
         fields = (
             'username', 'email', 'first_name', 'last_name', 'bio', 'role')
 
-    def validate_username(self, value):
-        if value == RESERVED_NAME:
-            raise serializers.ValidationError(RESERVED_NAME_ERROR)
-        return value
-
 
 class UserSerializerOrReadOnly(ForAdminSerializer):
+    username = serializers.CharField(validators=[validate_username])
+
     class Meta(ForAdminSerializer.Meta):
         read_only_fields = ('role',)
 

@@ -19,20 +19,17 @@ class User(AbstractUser):
         (USER, USER)
     )
     role = models.CharField(
-        max_length=20,
+        max_length=200,
         choices=ROLES,
         default=USER
     )
-    email = models.EmailField(unique=True)
-    bio = models.TextField(
-        blank=True
-    )
+    email = models.EmailField(max_length=254, unique=True)
+    bio = models.TextField(blank=True)
     username = models.CharField(max_length=150, unique=True, db_index=True)
-
     confirmation_code = models.CharField(max_length=50, blank=True, null=True)
 
     class Meta:
-        ordering = ('role',)
+        ordering = ('username',)
 
     @property
     def is_admin(self):
