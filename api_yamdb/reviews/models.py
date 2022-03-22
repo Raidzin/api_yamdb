@@ -27,8 +27,8 @@ class User(AbstractUser):
     bio = models.TextField(blank=True)
     username = models.CharField(max_length=150, unique=True, db_index=True)
     confirmation_code = models.CharField(max_length=50, blank=True, null=True)
-    first_name = models.CharField(max_length=150)
-    last_name = models.CharField(max_length=150)
+    first_name = models.CharField(max_length=150, blank=True)
+    last_name = models.CharField(max_length=150, blank=True)
 
     class Meta:
         ordering = ('username',)
