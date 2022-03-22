@@ -1,31 +1,26 @@
+from api_yamdb.settings import DEFAULT_FROM_EMAIL
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
-from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework.exceptions import ValidationError
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import SAFE_METHODS, AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.tokens import RefreshToken
+from reviews.models import Category, Genre, Review, Title, User
 
-from api_yamdb.settings import DEFAULT_FROM_EMAIL
-from reviews.models import User, Title, Category, Genre, Review
 from .filters import TitleFilter
-from .permissions import (
-    IsAdmin,
-    ReadOnlyOrAdmin,
-    CreateOrModeratorDeleteOrAdmin
-)
-from .serializers import (
-    ForAdminSerializer, UserSerializerOrReadOnly,
-    SignupSerializer, TokenSerializer,
-    OutputTitleSerializer, InputTitleSerializer,
-    CategorySerializer, GenreSerializer,
-    ReviewSerializer, CommentSerializer,
-)
+from .permissions import (CreateOrModeratorDeleteOrAdmin, IsAdmin,
+                          ReadOnlyOrAdmin)
+from .serializers import (CategorySerializer, CommentSerializer,
+                          ForAdminSerializer, GenreSerializer,
+                          InputTitleSerializer, OutputTitleSerializer,
+                          ReviewSerializer, SignupSerializer, TokenSerializer,
+                          UserSerializerOrReadOnly)
 
 CONFIRMATION_CODE = 'Код подтверждения для завершения регистрации'
 MESSAGE_FOR_YOUR_CONFIRMATION_CODE = 'Ваш код для получения JWT токена'

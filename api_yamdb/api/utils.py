@@ -1,8 +1,7 @@
-from django.shortcuts import get_object_or_404
-from reviews.models import Title
-from rest_framework.exceptions import ValidationError
 from django.core.validators import validate_email
-from reviews.models import User
+from django.shortcuts import get_object_or_404
+from rest_framework.exceptions import ValidationError
+from reviews.models import Title, User
 
 RESERVED_NAME = 'me'
 RESERVED_NAME_ERROR = 'Имя пользователя "me" использовать нельзя.'
