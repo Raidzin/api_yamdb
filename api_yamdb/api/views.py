@@ -3,7 +3,7 @@ from django.core.mail import send_mail
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 
-from rest_framework import filters, status, viewsets
+from rest_framework import filters, status, viewsets, mixins
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
@@ -122,7 +122,8 @@ class UserViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class TitleInfoViewSet(viewsets.ModelViewSet):
+class TitleInfoViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
+                       mixins.CreateModelMixin):
     permission_classes = ReadOnlyOrAdmin,
     pagination_class = PageNumberPagination
     filter_backends = filters.SearchFilter,
