@@ -39,6 +39,12 @@ class ForAdminSerializer(serializers.ModelSerializer):
         fields = (
             'username', 'email', 'first_name', 'last_name', 'bio', 'role')
 
+    def validate_username(self, username):
+        if User.objects.filter(username=username).exists():
+            raise serializers.ValidationError(
+                {'username': 'Такой юзернеймом уже существует'})
+        return username
+
 
 class UserSerializerOrReadOnly(ForAdminSerializer):
     username = serializers.CharField(validators=[validate_username])

@@ -5,7 +5,6 @@ from django.shortcuts import get_object_or_404
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.exceptions import ValidationError
 from rest_framework import filters, status, viewsets
-from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import SAFE_METHODS, AllowAny, IsAuthenticated
