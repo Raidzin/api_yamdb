@@ -14,7 +14,9 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from reviews.models import Category, Genre, Review, Title, User
 
-from .filters import TitleFilter
+from django_filters.rest_framework import DjangoFilterBackend
+
+from .filters import TitleFilterSet
 from .permissions import (
     IsAdmin,
     ReadOnlyOrAdmin,
@@ -170,8 +172,8 @@ class GenreViewSet(TitleInfoViewSet):
 class TitleViewSet(viewsets.ModelViewSet):
     permission_classes = ReadOnlyOrAdmin,
     pagination_class = PageNumberPagination
-    filter_backends = TitleFilter,
-    filter_fields = 'genre__slug', 'category__slug', 'year', 'name'
+    filter_backends = DjangoFilterBackend,
+    filterset_class = TitleFilterSet
 
     def get_queryset(self):
         return Title.objects.annotate(rating=Avg('reviews__score'))
