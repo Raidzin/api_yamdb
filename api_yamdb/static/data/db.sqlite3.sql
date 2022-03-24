@@ -1,5 +1,4 @@
 BEGIN TRANSACTION;
-INSERT INTO "reviews_user" VALUES (1,'pbkdf2_sha256$150000$KVNwJhkFGRhG$QyCD4vk7bU5mmv6X7Vp9lY6a4BmGGejpn7bB/voWTA8=','2022-03-03 12:37:15.556608',1,'','',1,1,'2022-03-03 12:25:09.646055','user','ad@da.ew','','alex','');
 INSERT INTO "reviews_user" VALUES (100,'','',0,'','',0,1,'2022-03-03 12:25:09.646055','user','bingobongo@yamdb.fake','','bingobongo','');
 INSERT INTO "reviews_user" VALUES (101,'','',0,'','',0,1,'2022-03-03 12:25:09.646056','admin','capt_obvious@yamdb.fake','','capt_obvious','');
 INSERT INTO "reviews_user" VALUES (102,'','',0,'','',0,1,'2022-03-03 12:25:09.646057','user','faust@yamdb.fake','','faust','');
