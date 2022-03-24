@@ -3,8 +3,13 @@ from datetime import datetime
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from django.core.exceptions import ValidationError
 
-FUTURE_ERROR = 'Нельзя сохранять анонсированные произведения'
+YEAR_ERROR = 'Год не может быть больше текущего'
+
+
+def current_year():
+    return datetime.now().year
 
 
 class User(AbstractUser):
@@ -96,12 +101,6 @@ class Title(models.Model):
     )
     year = models.IntegerField(
         verbose_name='Год',
-        validators=(
-            MaxValueValidator(
-                datetime.now().year,
-                FUTURE_ERROR
-            ),
-        ),
     )
     category = models.ForeignKey(
         Category,
@@ -122,6 +121,10 @@ class Title(models.Model):
 
     def __str__(self):
         return self.name
+
+    def clean(self):
+        if self.year > current_year():
+            raise ValidationError(YEAR_ERROR)
 
 
 class Review(models.Model):
