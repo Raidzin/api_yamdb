@@ -17,7 +17,7 @@ from .filters import TitleFilter
 from .permissions import (
     IsAdmin,
     ReadOnlyOrAdmin,
-    CreateOrModeratorDeleteOrAdmin
+    AuthCreateOrAuthorEditOrModeratorOrAdmin
 )
 from .serializers import (
     ForAdminSerializer, UserSerializerOrReadOnly,
@@ -165,7 +165,7 @@ class TitleViewSet(viewsets.ModelViewSet):
 
 class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
-    permission_classes = CreateOrModeratorDeleteOrAdmin,
+    permission_classes = AuthCreateOrAuthorEditOrModeratorOrAdmin,
 
     def get_queryset(self):
         title_id = self.kwargs.get('title_id')
@@ -180,7 +180,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
 class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
-    permission_classes = CreateOrModeratorDeleteOrAdmin,
+    permission_classes = AuthCreateOrAuthorEditOrModeratorOrAdmin,
 
     def get_queryset(self):
         review_id = self.kwargs.get('review_id')
