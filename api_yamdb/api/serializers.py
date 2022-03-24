@@ -5,7 +5,9 @@ from reviews.models import Category, Comment, Genre, Review, Title, User
 
 from .utils import CurrentTitleDefault, email_validate, validate_username
 
+
 SCORE_ERROR = 'Оценка может быть от 1 до 10!'
+OCCUPIED_USERNAME_ERROR = "Имя пользователя '{}' уже занято"
 USERNAME_RE = '^[A-Za-z0-9@.+-_]+$'
 
 
@@ -40,7 +42,7 @@ class ForAdminSerializer(serializers.ModelSerializer):
     def validate_username(self, username):
         if User.objects.filter(username=username).exists():
             raise serializers.ValidationError(
-                {'username': 'Такой юзернеймом уже существует'})
+                {'username': OCCUPIED_USERNAME_ERROR.format(username)})
         return username
 
 
@@ -101,7 +103,8 @@ class ReviewSerializer(serializers.ModelSerializer):
     )
 
     score = serializers.IntegerField(
-        validators=[MaxValueValidator(10), MinValueValidator(1)]
+        validators=[MaxValueValidator(10, SCORE_ERROR),
+                    MinValueValidator(1, SCORE_ERROR)]
     )
 
     class Meta:

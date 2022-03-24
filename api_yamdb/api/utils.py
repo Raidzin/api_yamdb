@@ -7,6 +7,7 @@ RESERVED_NAME = 'me'
 RESERVED_NAME_ERROR = 'Имя пользователя "me" использовать нельзя.'
 USER_OR_NAME_REGISTERED = 'Пользователь с таким именем уже зарегестрирован.'
 USER_OR_EMAIL_REGISTERED = 'Пользователь с такой почтой уже зарегестрирован.'
+INVALID_EMAIL = 'Введите корректный email.'
 
 
 class CurrentTitleDefault:
@@ -33,5 +34,5 @@ def email_validate(email):
             validate_email(email)
     except ValidationError:
         raise ValidationError(
-            {'email': 'Введите корректный email.'}
+            {'email': INVALID_EMAIL}
         )

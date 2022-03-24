@@ -5,7 +5,6 @@ from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 
 from rest_framework import filters, status, viewsets, mixins
-from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.pagination import PageNumberPagination
@@ -28,10 +27,12 @@ from .serializers import (
     CategorySerializer, GenreSerializer,
     ReviewSerializer, CommentSerializer,
 )
+from .utils import USER_OR_NAME_REGISTERED, USER_OR_EMAIL_REGISTERED
 
 
 CONFIRMATION_CODE = 'Код подтверждения для завершения регистрации'
 MESSAGE_FOR_YOUR_CONFIRMATION_CODE = 'Ваш код для получения JWT токена'
+INVALID_TOKEN = 'Токен не валидный'
 
 
 class APISignUp(APIView):
@@ -53,9 +54,9 @@ class APISignUp(APIView):
             email=email
         ).exists():
             if user_by_email and not_valid:
-                raise ValidationError('Почта занята')
+                raise ValidationError(USER_OR_EMAIL_REGISTERED)
             if user_by_username and not_valid:
-                raise ValidationError('Имя занято')
+                raise ValidationError(USER_OR_NAME_REGISTERED)
             User.objects.create(
                 username=username,
                 email=email
@@ -85,13 +86,15 @@ class APIToken(APIView):
         confirmation_code = serializer.validated_data['confirmation_code']
         user = get_object_or_404(User, username=username)
 
-        if (user and default_token_generator.check_token(
-                user, confirmation_code)):
+        if (
+            user
+            and default_token_generator.check_token(user, confirmation_code)
+        ):
             user.is_active = True
             user.save()
         else:
             response = {
-                'confirmation_code': 'Токен не валидный'
+                'confirmation_code': INVALID_TOKEN
             }
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
 
