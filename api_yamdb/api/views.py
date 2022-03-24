@@ -129,7 +129,8 @@ class TitleInfoViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     filter_backends = filters.SearchFilter,
     search_fields = 'name',
 
-    def destroy(self, *args, **kwargs):
+    @action(methods=['delete'], url_path=r'(?P<slug>\w+)', detail=False)
+    def destroy_object(self, *args, **kwargs):
         get_object_or_404(
             self.get_queryset(),
             slug=kwargs.get('slug')
