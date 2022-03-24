@@ -36,16 +36,6 @@ auth_urls = [
 ]
 
 urlpatterns = [
-    path(
-        'v1/categories/<slug:slug>/',
-        CategoryViewSet.as_view({'delete': 'destroy'}),
-        name='delete_category'
-    ),
-    path(
-        'v1/genres/<slug:slug>/',
-        GenreViewSet.as_view({'delete': 'destroy'}),
-        name='delete_genre'
-    ),
     path('v1/', include(router_v1.urls)),
     path('v1/auth/', include(auth_urls)),
 ]

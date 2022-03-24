@@ -19,29 +19,20 @@ class ReadOnlyOrAdmin(permissions.BasePermission):
         )
 
 
-class CreateOrModeratorDeleteOrAdmin(permissions.BasePermission):
+class AuthCreateOrAuthorEditOrModeratorOrAdmin(permissions.BasePermission):
     def has_permission(self, request, view):
         return (
             request.method in permissions.SAFE_METHODS
-            or request.method == 'PATCH'
-            or request.method == 'DELETE'
             or request.user.is_authenticated
-            and (
-                request.method == 'POST'
-                or request.user.is_admin
-            )
         )
 
     def has_object_permission(self, request, view, obj):
         return (
             request.method in permissions.SAFE_METHODS
-            or request.method == 'PATCH'
-            and obj.author == request.user
             or request.user.is_authenticated
             and (
-                request.method == 'POST'
-                or request.method == 'DELETE'
-                and request.user.is_moderator
+                obj.author == request.user
+                or request.user.is_moderator
                 or request.user.is_admin
             )
         )

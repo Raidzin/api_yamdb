@@ -3,7 +3,9 @@ from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
-from rest_framework import filters, status, viewsets
+
+from rest_framework import filters, status, viewsets, mixins
+from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.pagination import PageNumberPagination
@@ -14,13 +16,19 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from reviews.models import Category, Genre, Review, Title, User
 
 from .filters import TitleFilter
-from .permissions import (CreateOrModeratorDeleteOrAdmin, IsAdmin,
-                          ReadOnlyOrAdmin)
-from .serializers import (CategorySerializer, CommentSerializer,
-                          ForAdminSerializer, GenreSerializer,
-                          InputTitleSerializer, OutputTitleSerializer,
-                          ReviewSerializer, SignupSerializer, TokenSerializer,
-                          UserSerializerOrReadOnly)
+from .permissions import (
+    IsAdmin,
+    ReadOnlyOrAdmin,
+    AuthCreateOrAuthorEditOrModeratorOrAdmin
+)
+from .serializers import (
+    ForAdminSerializer, UserSerializerOrReadOnly,
+    SignupSerializer, TokenSerializer,
+    OutputTitleSerializer, InputTitleSerializer,
+    CategorySerializer, GenreSerializer,
+    ReviewSerializer, CommentSerializer,
+)
+
 
 CONFIRMATION_CODE = 'Код подтверждения для завершения регистрации'
 MESSAGE_FOR_YOUR_CONFIRMATION_CODE = 'Ваш код для получения JWT токена'
@@ -130,13 +138,15 @@ class UserViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class TitleInfoViewSet(viewsets.ModelViewSet):
+class TitleInfoViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
+                       mixins.CreateModelMixin):
     permission_classes = ReadOnlyOrAdmin,
     pagination_class = PageNumberPagination
     filter_backends = filters.SearchFilter,
     search_fields = 'name',
 
-    def destroy(self, *args, **kwargs):
+    @action(methods=['delete'], url_path=r'(?P<slug>\w+)', detail=False)
+    def destroy_object(self, *args, **kwargs):
         get_object_or_404(
             self.get_queryset(),
             slug=kwargs.get('slug')
@@ -171,7 +181,7 @@ class TitleViewSet(viewsets.ModelViewSet):
 
 class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
-    permission_classes = CreateOrModeratorDeleteOrAdmin,
+    permission_classes = AuthCreateOrAuthorEditOrModeratorOrAdmin,
 
     def get_queryset(self):
         title_id = self.kwargs.get('title_id')
@@ -186,7 +196,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
 class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
-    permission_classes = CreateOrModeratorDeleteOrAdmin,
+    permission_classes = AuthCreateOrAuthorEditOrModeratorOrAdmin,
 
     def get_queryset(self):
         review_id = self.kwargs.get('review_id')
