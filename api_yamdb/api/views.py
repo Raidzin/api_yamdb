@@ -1,3 +1,4 @@
+from api_yamdb.settings import DEFAULT_FROM_EMAIL
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.db.models import Avg
@@ -6,13 +7,14 @@ from django.shortcuts import get_object_or_404
 from rest_framework import filters, status, viewsets, mixins
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import SAFE_METHODS, AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.tokens import RefreshToken
+from reviews.models import Category, Genre, Review, Title, User
 
-from api_yamdb.settings import DEFAULT_FROM_EMAIL
-from reviews.models import User, Title, Category, Genre, Review
 from .filters import TitleFilter
 from .permissions import (
     IsAdmin,
@@ -27,6 +29,7 @@ from .serializers import (
     ReviewSerializer, CommentSerializer,
 )
 
+
 CONFIRMATION_CODE = 'Код подтверждения для завершения регистрации'
 MESSAGE_FOR_YOUR_CONFIRMATION_CODE = 'Ваш код для получения JWT токена'
 
@@ -38,13 +41,27 @@ class APISignUp(APIView):
     def post(self, request):
         serializer = SignupSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data.get('email')
+        username = serializer.validated_data.get('username')
+        user_by_email = User.objects.filter(
+            email=serializer.validated_data['email']).exists()
+        user_by_username = User.objects.filter(
+            username=serializer.validated_data['username']).exists()
+        not_valid = user_by_email != user_by_username
         if not User.objects.filter(
-                username=request.data['username'],
-                email=request.data['email']
+            username=username,
+            email=email
         ).exists():
-            serializer.save()
-        user = User.objects.get(username=request.data['username'],
-                                email=request.data['email'])
+            if user_by_email and not_valid:
+                raise ValidationError('Почта занята')
+            if user_by_username and not_valid:
+                raise ValidationError('Имя занято')
+            User.objects.create(
+                username=username,
+                email=email
+            )
+        user = User.objects.get(username=username,
+                                email=email)
         confirmation_code = default_token_generator.make_token(user)
         send_mail(
             CONFIRMATION_CODE,
@@ -64,13 +81,12 @@ class APIToken(APIView):
         serializer = TokenSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        username = serializer.data['username']
-        confirmation_code = serializer.data['confirmation_code']
+        username = serializer.validated_data['username']
+        confirmation_code = serializer.validated_data['confirmation_code']
         user = get_object_or_404(User, username=username)
 
-        if (user is not None
-                and default_token_generator.check_token(
-                    user, confirmation_code)):
+        if (user and default_token_generator.check_token(
+                user, confirmation_code)):
             user.is_active = True
             user.save()
         else:
@@ -79,9 +95,9 @@ class APIToken(APIView):
             }
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
 
-        token = Token.objects.get_or_create(user=user)
+        token = RefreshToken.for_user(user)
         response = {
-            'token': token[0].key,
+            'token': str(token.access_token),
         }
         return Response(response, status=status.HTTP_200_OK)
 
@@ -115,7 +131,7 @@ class UserViewSet(viewsets.ModelViewSet):
             serializer = UserSerializerOrReadOnly(
                 user,
                 data=request.data,
-                partial=True, many=False
+                partial=True
             )
             serializer.is_valid(raise_exception=True)
             serializer.save()
