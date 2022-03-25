@@ -14,29 +14,57 @@ def current_year():
 
 class User(AbstractUser):
     """Добавление дополнительных полей."""
-    ADMIN = 'admin'
-    MODERATOR = 'moderator'
-    USER = 'user'
+    ADMIN = 'admin', 'администратор'
+    MODERATOR = 'moderator', 'модератор'
+    USER = 'user', 'пользователь'
 
     ROLES = (
-        (ADMIN, ADMIN),
-        (MODERATOR, MODERATOR),
-        (USER, USER)
+        ADMIN,
+        MODERATOR,
+        USER,
     )
     role = models.CharField(
         max_length=max([len(role[0]) for role in ROLES]),
         choices=ROLES,
-        default=USER
+        default=USER,
+        verbose_name='Роль',
     )
-    email = models.EmailField(max_length=254, unique=True)
-    bio = models.TextField(blank=True)
-    username = models.CharField(max_length=150, unique=True, db_index=True)
-    confirmation_code = models.CharField(max_length=50, blank=True, null=True)
-    first_name = models.CharField(max_length=150, blank=True)
-    last_name = models.CharField(max_length=150, blank=True)
+    email = models.EmailField(
+        max_length=254,
+        unique=True,
+        verbose_name='Электронная почта',
+    )
+    bio = models.TextField(
+        blank=True,
+        verbose_name='Биография',
+    )
+    username = models.CharField(
+        max_length=150,
+        unique=True,
+        db_index=True,
+        verbose_name='Имя пользователя',
+    )
+    confirmation_code = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        verbose_name='код подтверждения',
+    )
+    first_name = models.CharField(
+        max_length=150,
+        blank=True,
+        verbose_name='Имя',
+    )
+    last_name = models.CharField(
+        max_length=150,
+        blank=True,
+        verbose_name='Фамилия',
+    )
 
     class Meta:
         ordering = ('username',)
+        verbose_name = 'Пользователя'
+        verbose_name_plural = 'Пользователи'
 
     @property
     def is_admin(self):
