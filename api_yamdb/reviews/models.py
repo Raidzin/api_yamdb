@@ -14,14 +14,14 @@ def current_year():
 
 class User(AbstractUser):
     """Добавление дополнительных полей."""
-    ADMIN = 'admin', 'администратор'
-    MODERATOR = 'moderator', 'модератор'
-    USER = 'user', 'пользователь'
+    ADMIN = 'admin'
+    MODERATOR = 'moderator'
+    USER = 'user'
 
     ROLES = (
-        ADMIN,
-        MODERATOR,
-        USER,
+        (ADMIN, ADMIN),
+        (MODERATOR, MODERATOR),
+        (USER, USER)
     )
     role = models.CharField(
         max_length=max([len(role[0]) for role in ROLES]),
