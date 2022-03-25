@@ -31,7 +31,7 @@ from .serializers import (
 )
 from .utils import USER_OR_NAME_REGISTERED, USER_OR_EMAIL_REGISTERED
 
-
+REVIEW_ERROR = 'Нельзя создать два ревью на одно произведение'
 CONFIRMATION_CODE = 'Код подтверждения для завершения регистрации'
 MESSAGE_FOR_YOUR_CONFIRMATION_CODE = 'Ваш код для получения JWT токена'
 INVALID_TOKEN = 'Токен не валидный'
@@ -194,8 +194,9 @@ class ReviewViewSet(viewsets.ModelViewSet):
         return title.reviews.all()
 
     def perform_create(self, serializer):
-        title_id = self.kwargs.get('title_id')
-        title = get_object_or_404(Title, id=title_id)
+        title = get_object_or_404(Title, id=self.kwargs.get('title_id'))
+        if title.reviews.filter(author=self.request.user).exists():
+            raise ValidationError(REVIEW_ERROR)
         serializer.save(author=self.request.user, title=title)
 
 

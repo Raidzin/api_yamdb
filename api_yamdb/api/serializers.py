@@ -5,7 +5,6 @@ from reviews.models import Category, Comment, Genre, Review, Title, User
 
 from .utils import CurrentTitleDefault, email_validate, validate_username
 
-
 SCORE_ERROR = 'Оценка может быть от 1 до 10!'
 OCCUPIED_USERNAME_ERROR = "Имя пользователя '{}' уже занято"
 USERNAME_RE = '^[A-Za-z0-9@.+-_]+$'
@@ -98,9 +97,6 @@ class ReviewSerializer(serializers.ModelSerializer):
         read_only=True,
         slug_field='username'
     )
-    title = serializers.HiddenField(
-        default=CurrentTitleDefault()
-    )
 
     score = serializers.IntegerField(
         validators=[MaxValueValidator(10, SCORE_ERROR),
@@ -108,14 +104,8 @@ class ReviewSerializer(serializers.ModelSerializer):
     )
 
     class Meta:
-        fields = ('id', 'text', 'author', 'score', 'pub_date', 'title')
+        fields = ('id', 'text', 'author', 'score', 'pub_date')
         model = Review
-        validators = [
-            UniqueTogetherValidator(
-                queryset=Review.objects.all(),
-                fields=('author', 'title')
-            )
-        ]
 
 
 class CommentSerializer(serializers.ModelSerializer):
