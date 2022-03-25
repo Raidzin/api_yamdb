@@ -20,7 +20,7 @@ from .filters import TitleFilterSet
 from .permissions import (
     IsAdmin,
     ReadOnlyOrAdmin,
-    AuthCreateOrAuthorEditOrModeratorOrAdmin
+    AuthorOrModeratorOrAdminOrReadOnly
 )
 from .serializers import (
     ForAdminSerializer, UserSerializerOrReadOnly,
@@ -187,7 +187,7 @@ class TitleViewSet(viewsets.ModelViewSet):
 
 class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
-    permission_classes = AuthCreateOrAuthorEditOrModeratorOrAdmin,
+    permission_classes = AuthorOrModeratorOrAdminOrReadOnly,
 
     def get_queryset(self):
         return get_object_or_404(
@@ -204,7 +204,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
 class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
-    permission_classes = AuthCreateOrAuthorEditOrModeratorOrAdmin,
+    permission_classes = AuthorOrModeratorOrAdminOrReadOnly,
 
     def get_queryset(self):
         return get_object_or_404(
