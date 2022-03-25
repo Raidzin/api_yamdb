@@ -1,9 +1,8 @@
 from django.core.validators import MaxValueValidator, MinValueValidator
 from rest_framework import serializers
-from rest_framework.validators import UniqueTogetherValidator
 from reviews.models import Category, Comment, Genre, Review, Title, User
 
-from .utils import CurrentTitleDefault, email_validate, validate_username
+from .utils import email_validate, validate_username
 
 SCORE_ERROR = 'Оценка может быть от 1 до 10!'
 OCCUPIED_USERNAME_ERROR = "Имя пользователя '{}' уже занято"
