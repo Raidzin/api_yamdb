@@ -5,7 +5,7 @@ from .views import (UserViewSet, ReviewViewSet,
                     CommentViewSet, TitleViewSet,
                     CategoryViewSet, GenreViewSet)
 
-from api.views import APIToken, APISignUp
+from api.views import APIToken, SignUp
 
 router_v1 = routers.DefaultRouter()
 router_v1.register('users', UserViewSet, basename='user')
@@ -30,7 +30,7 @@ auth_urls = [
     ),
     path(
         'signup/',
-        APISignUp.as_view(),
+        SignUp.as_view(),
         name='signup'
     ),
 ]

@@ -1,7 +1,6 @@
-from api_yamdb.settings import DEFAULT_FROM_EMAIL
 from django.contrib.auth.tokens import default_token_generator
-from django.core.mail import send_mail
 from django.db.models import Avg
+from django.db.utils import IntegrityError
 from django.shortcuts import get_object_or_404
 
 from rest_framework import filters, status, viewsets, mixins
@@ -29,83 +28,59 @@ from .serializers import (
     CategorySerializer, GenreSerializer,
     ReviewSerializer, CommentSerializer,
 )
-from .utils import USER_OR_NAME_REGISTERED, USER_OR_EMAIL_REGISTERED
+from .utils import send_confirmation_code
+
+USER_IS_REGISTERED = 'Такой пользователь уже существует'
+OCCUPIED_EMAIL_OR_USERNAME = 'Электронная почта или имя пользователя занято'
 
 REVIEW_ERROR = 'Нельзя создать два ревью на одно произведение'
-CONFIRMATION_CODE = 'Код подтверждения для завершения регистрации'
-MESSAGE_FOR_YOUR_CONFIRMATION_CODE = 'Ваш код для получения JWT токена'
-INVALID_TOKEN = 'Токен не валидный'
+INVALID_TOKEN = 'Неверный токен'
 
 
-class APISignUp(APIView):
-    """Регистрация пользователя."""
-    permission_classes = (AllowAny,)
+class SignUp(APIView):
+    permission_classes = AllowAny,
 
     def post(self, request):
         serializer = SignupSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        email = serializer.validated_data.get('email')
-        username = serializer.validated_data.get('username')
-        user_by_email = User.objects.filter(
-            email=serializer.validated_data['email']).exists()
-        user_by_username = User.objects.filter(
-            username=serializer.validated_data['username']).exists()
-        not_valid = user_by_email != user_by_username
-        if not User.objects.filter(
-                username=username,
-                email=email
-        ).exists():
-            if user_by_email and not_valid:
-                raise ValidationError(USER_OR_EMAIL_REGISTERED)
-            if user_by_username and not_valid:
-                raise ValidationError(USER_OR_NAME_REGISTERED)
-            User.objects.create(
-                username=username,
-                email=email
+        try:
+            user, created = User.objects.get_or_create(
+                email=serializer.validated_data.get('email'),
+                username=serializer.validated_data.get('username'),
             )
-        user = User.objects.get(username=username,
-                                email=email)
-        confirmation_code = default_token_generator.make_token(user)
-        send_mail(
-            CONFIRMATION_CODE,
-            f'{MESSAGE_FOR_YOUR_CONFIRMATION_CODE} {confirmation_code}',
-            DEFAULT_FROM_EMAIL,
-            [request.data['email']],
-            fail_silently=False,
-        )
+            if created:
+                user.is_active = False
+                user.save()
+        except IntegrityError:
+            raise ValidationError(OCCUPIED_EMAIL_OR_USERNAME)
+        if user.is_active:
+            raise ValidationError(USER_IS_REGISTERED)
+        send_confirmation_code(user, request.data['email'])
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class APIToken(APIView):
-    """Выдача токена"""
-    permission_classes = (AllowAny,)
+    permission_classes = AllowAny,
 
     def post(self, request):
         serializer = TokenSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-
-        username = serializer.validated_data['username']
-        confirmation_code = serializer.validated_data['confirmation_code']
-        user = get_object_or_404(User, username=username)
-
-        if (
-                user
-                and default_token_generator.check_token(user,
-                                                        confirmation_code)
-        ):
-            user.is_active = True
-            user.save()
-        else:
-            response = {
-                'confirmation_code': INVALID_TOKEN
-            }
+        user = get_object_or_404(
+            User,
+            username=serializer.validated_data['username']
+        )
+        if not default_token_generator.check_token(
+                user, serializer.validated_data['confirmation_code']):
+            response = {'confirmation_code': INVALID_TOKEN}
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
 
+        user.is_active = True
+        user.save()
         token = RefreshToken.for_user(user)
         response = {
             'token': str(token.access_token),
         }
-        return Response(response, status=status.HTTP_200_OK)
+        return Response(response)
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -144,8 +119,8 @@ class UserViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class TitleInfoViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
-                       mixins.CreateModelMixin):
+class TitleInfoViewSet(mixins.CreateModelMixin, mixins.ListModelMixin,
+                       viewsets.GenericViewSet):
     permission_classes = ReadOnlyOrAdmin,
     pagination_class = PageNumberPagination
     filter_backends = filters.SearchFilter,

@@ -1,12 +1,14 @@
-from django.core.validators import validate_email
+from django.core.mail import send_mail
+from django.contrib.auth.tokens import default_token_generator
+from api_yamdb.settings import DEFAULT_FROM_EMAIL
+
 from rest_framework.exceptions import ValidationError
-from reviews.models import User
 
 RESERVED_NAME = 'me'
 RESERVED_NAME_ERROR = 'Имя пользователя "me" использовать нельзя.'
-USER_OR_NAME_REGISTERED = 'Пользователь с таким именем уже зарегистрирован.'
-USER_OR_EMAIL_REGISTERED = 'Пользователь с такой почтой уже зарегистрирован.'
-INVALID_EMAIL = 'Введите корректный email.'
+
+CONFIRMATION_CODE = 'Код подтверждения для завершения регистрации'
+MESSAGE_FOR_YOUR_CONFIRMATION_CODE = 'Ваш код для получения JWT токена {}'
 
 
 def validate_username(username):
@@ -15,12 +17,12 @@ def validate_username(username):
     return username
 
 
-def email_validate(email):
-    try:
-        if not User.objects.filter(email=email).exists():
-            validate_email(email)
-            return email
-    except ValidationError:
-        raise ValidationError(
-            {'email': INVALID_EMAIL}
-        )
+def send_confirmation_code(user, email):
+    confirmation_code = default_token_generator.make_token(user)
+    send_mail(
+        CONFIRMATION_CODE,
+        MESSAGE_FOR_YOUR_CONFIRMATION_CODE.format(confirmation_code),
+        DEFAULT_FROM_EMAIL,
+        (email,),
+        fail_silently=False,
+    )

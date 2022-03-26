@@ -1,8 +1,9 @@
-from django.core.validators import MaxValueValidator, MinValueValidator
+from django.core.validators import (MaxValueValidator, MinValueValidator,
+                                    EmailValidator)
 from rest_framework import serializers
 from reviews.models import Category, Comment, Genre, Review, Title, User
 
-from .utils import email_validate, validate_username
+from .utils import validate_username
 
 SCORE_ERROR = 'Оценка может быть от 1 до 10!'
 OCCUPIED_USERNAME_ERROR = "Имя пользователя '{}' уже занято"
@@ -22,7 +23,7 @@ class TokenSerializer(serializers.Serializer):
 class SignupSerializer(serializers.Serializer):
     email = serializers.EmailField(
         required=True,
-        validators=[email_validate]
+        validators=(EmailValidator,),
     )
     username = serializers.CharField(
         required=True, validators=[validate_username]
