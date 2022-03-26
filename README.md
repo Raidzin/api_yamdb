@@ -79,7 +79,7 @@ http://127.0.0.1:8000/redoc/
 
 `python write_data.py`
 
-### Авторы проекта:
+## Авторы проекта:
 - [Алексей Гончарук](https://github.com/Raidzin "Github")
 - [Валерия Егорова](https://github.com/Valeria7317 "Github")
 - [Дмитрий Осипов](https://github.com/chin0318 "Github")
