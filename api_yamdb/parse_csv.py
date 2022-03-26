@@ -1,5 +1,6 @@
 import sqlite3
 import os
+import csv
 
 INSERT = "INSERT INTO {0} ({1}) VALUES ({2});"
 
@@ -10,23 +11,30 @@ os.chdir('static')
 os.chdir('data')
 
 file_names = [file for file in os.listdir() if file.endswith('.csv')]
-print(file_names)
 
 for file_name in file_names:
+    table_name = 'reviews_' + file_name[:-4]
     with open(file_name, 'r', encoding='utf-8') as file:
-        columns = file.readline().strip()
-        line = file.readline().strip()
-        line = line.split(',')
-        line = [f"'{word}'" for word in line]
-        line = ', '.join(line)
-        while line:
-            print(INSERT.format('reviews_' + file_name[:-4], columns, line))
-            cur.execute(INSERT.format('reviews_' + file_name[:-4], columns, line))
-            line = file.readline().strip()
-            if not line:
-                break
-            line = line.split(',')
-            line = [f"'{word}'" for word in line]
-            line = ', '.join(line)
+        reader = csv.DictReader(file)
+        for row in reader:
+            into = list(row.keys())
+            values = list(row.values())
+            for i, value in enumerate(values):
+                value = value.replace("'", "''")
+                values[i] = f"'{value}'"
 
+            if table_name == 'reviews_user':
+                into.extend(('password', 'is_superuser',
+                             'is_staff', 'is_active', 'date_joined'))
+                values.extend(('0', '0', '0', '0', '0'))
+            try:
+                into = ', '.join(into)
+                values = ', '.join(values)
+                cur.execute(INSERT.format(table_name, into, values))
+            except Exception as error:
+                print()
+                print(INSERT.format(table_name, into, values))
+                print(error, end='\n\n')
 cur.execute('COMMIT;')
+
+# Хорошо что скрип записи данных не проходит ревью...

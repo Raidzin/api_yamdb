@@ -77,7 +77,7 @@ http://127.0.0.1:8000/redoc/
 
 `cd api_yamdb`
 
-`python write_data.py`
+`python parse_csv.py`
 
 ## Авторы проекта:
 - [Алексей Гончарук](https://github.com/Raidzin "Github")
