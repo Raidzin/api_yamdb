@@ -3,7 +3,6 @@ from datetime import datetime
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-from django.core.exceptions import ValidationError
 
 YEAR_ERROR = 'Год не может быть больше текущего'
 
@@ -24,7 +23,7 @@ class User(AbstractUser):
         (USER, USER)
     )
     role = models.CharField(
-        max_length=max([len(role[0]) for role in ROLES]),
+        max_length=len(max(ROLES, key=lambda role: len(role[0]))),
         choices=ROLES,
         default=USER,
         verbose_name='Роль',
@@ -79,7 +78,7 @@ class User(AbstractUser):
         return self.role == self.USER
 
 
-class Category(models.Model):
+class TitleInfo(models.Model):
     name = models.TextField(
         verbose_name='Название',
         max_length=256,
@@ -90,31 +89,23 @@ class Category(models.Model):
         unique=True,
     )
 
+    class Meta:
+        abstract = True
+
+    def __str__(self):
+        return self.name
+
+
+class Category(TitleInfo):
     class Meta:
         verbose_name = 'Категорию'
         verbose_name_plural = 'Категории'
 
-    def __str__(self):
-        return self.name
 
-
-class Genre(models.Model):
-    name = models.TextField(
-        verbose_name='Название',
-        max_length=256,
-    )
-    slug = models.SlugField(
-        verbose_name='идентификатор',
-        max_length=50,
-        unique=True,
-    )
-
+class Genre(TitleInfo):
     class Meta:
         verbose_name = 'Жанр'
         verbose_name_plural = 'Жанры'
-
-    def __str__(self):
-        return self.name
 
 
 class Title(models.Model):
@@ -128,6 +119,7 @@ class Title(models.Model):
     )
     year = models.IntegerField(
         verbose_name='Год',
+        validators=(MaxValueValidator(current_year, YEAR_ERROR),),
     )
     category = models.ForeignKey(
         Category,
@@ -148,10 +140,6 @@ class Title(models.Model):
 
     def __str__(self):
         return self.name
-
-    def clean(self):
-        if self.year > current_year():
-            raise ValidationError(YEAR_ERROR)
 
 
 class Review(models.Model):

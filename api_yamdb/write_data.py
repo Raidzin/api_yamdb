@@ -6,7 +6,7 @@ cur = conn.cursor()
 
 os.chdir('static')
 os.chdir('data')
-
+# файл db.sqlite3.sql создан из данных в csv
 sql_file = open('db.sqlite3.sql', 'r', encoding='utf-8')
 inserts = sql_file.read()
 sql_file.close()
