@@ -30,7 +30,6 @@ from .serializers import (
 )
 from .utils import send_confirmation_code
 
-USER_IS_REGISTERED = 'Такой пользователь уже существует'
 OCCUPIED_EMAIL_OR_USERNAME = 'Электронная почта или имя пользователя занято'
 
 REVIEW_ERROR = 'Нельзя создать два ревью на одно произведение'
@@ -53,8 +52,6 @@ class SignUp(APIView):
                 user.save()
         except IntegrityError:
             raise ValidationError(OCCUPIED_EMAIL_OR_USERNAME)
-        if user.is_active:
-            raise ValidationError(USER_IS_REGISTERED)
         send_confirmation_code(user, request.data['email'])
         return Response(serializer.data, status=status.HTTP_200_OK)
 
